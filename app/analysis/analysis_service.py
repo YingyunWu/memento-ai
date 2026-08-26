@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from app.database.database import (
     add_analysis,
@@ -7,6 +8,8 @@ from app.database.database import (
     update_analysis,
     delete_analysis,
 )
+
+from app.ai.llm_service import analyze_text
 
 
 # ============================================================
@@ -90,6 +93,73 @@ def validate_confidence(confidence):
 
 
 # ============================================================
+# Serialize analysis result
+# ============================================================
+
+def serialize_analysis_result(result):
+    """
+    Convert analysis results into a SQLite-safe value.
+
+    SQLite TEXT fields cannot directly store Python
+    lists or dictionaries, so structured results are
+    serialized as JSON.
+
+    Examples:
+
+        ["AI", "Python"]
+        ->
+        '["AI", "Python"]'
+
+        {"label": "happy", "confidence": 0.9}
+        ->
+        '{"label": "happy", "confidence": 0.9}'
+    """
+
+    if result is None:
+        return None
+
+    if isinstance(
+        result,
+        (dict, list)
+    ):
+        return json.dumps(
+            result,
+            ensure_ascii=False
+        )
+
+    return str(result)
+
+
+# ============================================================
+# Deserialize analysis result
+# ============================================================
+
+def deserialize_analysis_result(result):
+    """
+    Convert a JSON string stored in SQLite back into
+    a Python list or dictionary when possible.
+    """
+
+    if result is None:
+        return None
+
+    if not isinstance(
+        result,
+        str
+    ):
+        return result
+
+    try:
+        return json.loads(result)
+
+    except (
+        json.JSONDecodeError,
+        TypeError
+    ):
+        return result
+
+
+# ============================================================
 # Create analysis result
 # ============================================================
 
@@ -103,13 +173,6 @@ def create_analysis_result(
 ):
     """
     Create and store a standardized analysis result.
-
-    This function currently does not call an AI model.
-
-    It is responsible for:
-        1. Validating the analysis result.
-        2. Saving it to the database.
-        3. Returning a standardized dictionary.
     """
 
     analysis_type = validate_analysis_type(
@@ -134,10 +197,14 @@ def create_analysis_result(
         if confidence is None:
             confidence = 0.0
 
+    serialized_result = serialize_analysis_result(
+        result
+    )
+
     analysis_id = add_analysis(
         memory_id=memory_id,
         analysis_type=analysis_type,
-        result=result,
+        result=serialized_result,
         confidence=confidence,
         status=status,
         reason=reason,
@@ -158,7 +225,7 @@ def create_analysis_result(
 
 
 # ============================================================
-# Unknown / insufficient information
+# Unknown result
 # ============================================================
 
 def unknown_result(
@@ -170,8 +237,7 @@ def unknown_result(
     Create an explicit unknown analysis result.
 
     Memento AI should not invent information when
-    the available memory does not provide enough
-    evidence for a reliable conclusion.
+    there is insufficient evidence.
     """
 
     return create_analysis_result(
@@ -194,9 +260,6 @@ def create_pending_analysis(
 ):
     """
     Create a pending analysis record.
-
-    This will be useful when an AI analysis job
-    has been requested but has not completed yet.
     """
 
     return create_analysis_result(
@@ -205,7 +268,6 @@ def create_pending_analysis(
         result=None,
         confidence=None,
         status="pending",
-        reason=None,
     )
 
 
@@ -217,16 +279,28 @@ def get_memory_analyses(memory_id):
     """
     Get all analysis results associated
     with a memory.
+
+    JSON strings stored in SQLite are converted
+    back into Python objects.
     """
 
     analyses = get_analyses(
         memory_id
     )
 
-    return [
-        dict(analysis)
-        for analysis in analyses
-    ]
+    results = []
+
+    for analysis in analyses:
+
+        item = dict(analysis)
+
+        item["result"] = deserialize_analysis_result(
+            item.get("result")
+        )
+
+        results.append(item)
+
+    return results
 
 
 # ============================================================
@@ -245,11 +319,17 @@ def get_single_analysis(analysis_id):
     if analysis is None:
         return None
 
-    return dict(analysis)
+    item = dict(analysis)
+
+    item["result"] = deserialize_analysis_result(
+        item.get("result")
+    )
+
+    return item
 
 
 # ============================================================
-# Update analysis result
+# Update analysis
 # ============================================================
 
 def edit_analysis(
@@ -276,9 +356,13 @@ def edit_analysis(
                 f"Unsupported analysis status: {status}"
             )
 
+    serialized_result = serialize_analysis_result(
+        result
+    )
+
     return update_analysis(
         analysis_id=analysis_id,
-        result=result,
+        result=serialized_result,
         confidence=confidence,
         status=status,
         reason=reason,
@@ -300,17 +384,208 @@ def remove_analysis(analysis_id):
 
 
 # ============================================================
-# Text analysis placeholder
+# Store LLM result
 # ============================================================
 
-def analyze_text_memory(
+def store_llm_analysis(
+    memory_id,
+    llm_result,
+):
+    """
+    Store a validated LLM analysis result
+    in the analyses table.
+
+    The LLM result is expected to contain:
+
+        summary
+        topics
+        mood
+        tags
+    """
+
+    if not isinstance(
+        llm_result,
+        dict
+    ):
+        raise ValueError(
+            "LLM analysis result must be a dictionary."
+        )
+
+    # --------------------------------------------------------
+    # Summary
+    # --------------------------------------------------------
+
+    summary = llm_result.get(
+        "summary"
+    )
+
+    if summary is None:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="summary",
+            result=None,
+            confidence=0.0,
+            status="unknown",
+            reason=(
+                "The model could not generate "
+                "a reliable summary."
+            ),
+        )
+
+    else:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="summary",
+            result=summary,
+            status="completed",
+        )
+
+    # --------------------------------------------------------
+    # Topics
+    # --------------------------------------------------------
+
+    topics = llm_result.get(
+        "topics",
+        []
+    )
+
+    if not topics:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="topics",
+            result=None,
+            confidence=0.0,
+            status="unknown",
+            reason=(
+                "No reliable topics could "
+                "be identified."
+            ),
+        )
+
+    else:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="topics",
+            result=topics,
+            status="completed",
+        )
+
+    # --------------------------------------------------------
+    # Mood
+    # --------------------------------------------------------
+
+    mood = llm_result.get(
+        "mood",
+        {}
+    )
+
+    if not isinstance(
+        mood,
+        dict
+    ):
+        mood = {}
+
+    mood_label = mood.get(
+        "label"
+    )
+
+    mood_confidence = validate_confidence(
+        mood.get(
+            "confidence",
+            0.0
+        )
+    )
+
+    mood_reason = mood.get(
+        "reason",
+        "Insufficient information."
+    )
+
+    if mood_label is None:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="mood",
+            result=None,
+            confidence=0.0,
+            status="unknown",
+            reason=mood_reason,
+        )
+
+    else:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="mood",
+            result=mood,
+            confidence=mood_confidence,
+            status="completed",
+        )
+
+    # --------------------------------------------------------
+    # Tags
+    # --------------------------------------------------------
+
+    tags = llm_result.get(
+        "tags",
+        []
+    )
+
+    if not tags:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="tags",
+            result=None,
+            confidence=0.0,
+            status="unknown",
+            reason=(
+                "No reliable tags could "
+                "be identified."
+            ),
+        )
+
+    else:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="tags",
+            result=tags,
+            status="completed",
+        )
+
+    return get_memory_analyses(
+        memory_id
+    )
+
+
+# ============================================================
+# Analyze and store text memory
+# ============================================================
+
+def analyze_and_store_text_memory(
     memory_id,
     content,
 ):
     """
-    Prepare a text memory for future AI analysis.
+    Analyze a text memory using DeepSeek
+    and store the results in SQLite.
 
-    No AI model is called yet.
+    Pipeline:
+
+        Memory
+            ↓
+        DeepSeek
+            ↓
+        Structured result
+            ↓
+        Validation
+            ↓
+        SQLite
     """
 
     if not content or not content.strip():
@@ -319,19 +594,53 @@ def analyze_text_memory(
             "Text memory content cannot be empty."
         )
 
-    existing_analyses = get_memory_analyses(
-        memory_id
-    )
+    try:
 
-    return {
-        "memory_id": memory_id,
-        "memory_type": "text",
-        "status": "pending",
-        "message": (
-            "Text memory is ready for AI analysis."
-        ),
-        "analyses": existing_analyses,
-    }
+        llm_result = analyze_text(
+            content
+        )
+
+        return store_llm_analysis(
+            memory_id=memory_id,
+            llm_result=llm_result,
+        )
+
+    except Exception as error:
+
+        create_analysis_result(
+            memory_id=memory_id,
+            analysis_type="summary",
+            result=None,
+            confidence=0.0,
+            status="failed",
+            reason=str(error),
+        )
+
+        raise
+
+
+# ============================================================
+# Text analysis
+# ============================================================
+
+def analyze_text_memory(
+    memory_id,
+    content,
+):
+    """
+    Analyze and store a text memory.
+    """
+
+    if not content or not content.strip():
+
+        raise ValueError(
+            "Text memory content cannot be empty."
+        )
+
+    return analyze_and_store_text_memory(
+        memory_id=memory_id,
+        content=content,
+    )
 
 
 # ============================================================
@@ -364,7 +673,7 @@ def analyze_media_memory(
     }:
 
         raise ValueError(
-            f"Unsupported memory type: {memory_type}"
+            f"Unsupported media type: {memory_type}"
         )
 
     if not content or not content.strip():
@@ -400,10 +709,6 @@ def analyze_memory(
 ):
     """
     Unified entry point for memory analysis.
-
-    The rest of Memento AI should call this function
-    instead of interacting directly with individual
-    AI models.
     """
 
     memory_type = memory_type.lower().strip()
