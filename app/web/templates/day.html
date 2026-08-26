@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+```
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    {{ journal_date }} — Memento
+</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}"
+>
+```
+
+</head>
+
+<body>
+
+<header class="site-header">
+
+```
+<a
+    href="/"
+    class="logo"
+>
+    Memento
+</a>
+
+
+<nav>
+
+    <a href="/">
+        Today
+    </a>
+
+    <a
+        href="/calendar/{{ journal_date[:4] }}/{{ journal_date[5:7]|int }}"
+    >
+        Calendar
+    </a>
+
+</nav>
+```
+
+</header>
+
+<main class="day-page">
+
+```
+<section class="day-heading">
+
+    <p class="eyebrow">
+        MEMORY
+    </p>
+
+
+    <h1>
+        {{ journal_date }}
+    </h1>
+
+
+    {% if keyword and keyword.final_keyword %}
+
+        <div class="day-keyword">
+
+            {{ keyword.final_keyword }}
+
+        </div>
+
+    {% endif %}
+
+</section>
+
+
+<!-- ==========================================
+     Write today's memory
+=========================================== -->
+
+<section class="memory-composer">
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'day_view',
+            journal_date=journal_date
+        ) }}"
+    >
+
+        <label
+            for="memory-content"
+            class="composer-label"
+        >
+            WHAT DO YOU WANT TO REMEMBER?
+        </label>
+
+
+        <textarea
+            id="memory-content"
+            name="content"
+            placeholder="Write something you want to remember..."
+            required
+        ></textarea>
+
+
+        <div class="composer-footer">
+
+            <span>
+                Text memory
+            </span>
+
+
+            <button
+                type="submit"
+                class="save-memory-button"
+            >
+                Save memory
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<!-- ==========================================
+     Memories
+=========================================== -->
+
+<section class="memory-list">
+
+    {% if memories %}
+
+        {% for memory in memories %}
+
+            <article class="memory-card">
+
+                <div class="memory-type">
+
+                    {{ memory.memory_type }}
+
+                </div>
+
+
+                {% if memory.memory_type == "photo" %}
+
+                    {% if memory.file_path %}
+
+                        <img
+                            src="/{{ memory.file_path }}"
+                            alt="Memory photo"
+                            class="memory-photo"
+                        >
+
+                    {% endif %}
+
+
+                {% elif memory.memory_type == "music" %}
+
+                    <div class="memory-content">
+
+                        🎵
+
+                        <a
+                            href="{{ memory.content }}"
+                            target="_blank"
+                        >
+                            Open music
+                        </a>
+
+                    </div>
+
+
+                {% elif memory.memory_type == "video" %}
+
+                    <div class="memory-content">
+
+                        ▶
+
+                        <a
+                            href="{{ memory.content }}"
+                            target="_blank"
+                        >
+                            Open video
+                        </a>
+
+                    </div>
+
+
+                {% else %}
+
+                    <p class="memory-content">
+
+                        {{ memory.content }}
+
+                    </p>
+
+                {% endif %}
+
+
+                <div class="memory-date">
+
+                    {{ memory.created_at }}
+
+                </div>
+
+            </article>
+
+        {% endfor %}
+
+
+    {% else %}
+
+        <div class="empty-memory">
+
+            <p>
+                Nothing recorded yet.
+            </p>
+
+            <span>
+                This day is still waiting to be remembered.
+            </span>
+
+        </div>
+
+    {% endif %}
+
+</section>
+```
+
+</main>
+
+<footer class="site-footer">
+
+```
+<span>
+    Memento AI
+</span>
+
+<span>
+    Remember what matters.
+</span>
+```
+
+</footer>
+
+</body>
+
+</html>

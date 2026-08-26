@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+```
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    Memento AI — {{ year }}.{{ "%02d"|format(month) }}
+</title>
+
+<!-- IMPORTANT:
+     style.css is located at:
+     app/web/static/css/style.css
+-->
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}"
+>
+```
+
+</head>
+
+<body>
+
+<header class="site-header">
+
+```
+<a
+    href="/"
+    class="logo"
+>
+    Memento
+</a>
+
+<nav>
+
+    <a href="/">
+        Home
+    </a>
+
+    <a href="/calendar/{{ year }}/{{ month }}">
+        Calendar
+    </a>
+
+</nav>
+```
+
+</header>
+
+<main class="calendar-page">
+
+```
+<section class="calendar-heading">
+
+    <p class="eyebrow">
+        MEMORY CALENDAR
+    </p>
+
+    <h1>
+        {{ year }}.{{ "%02d"|format(month) }}
+    </h1>
+
+    <p>
+        A small word for every day.
+    </p>
+
+</section>
+
+
+{# -----------------------------------------------
+   Convert keyword list into a dictionary.
+
+   Example:
+
+   {
+       "2026-08-26": "链路跑通",
+       "2026-08-28": "今天真的感觉项目越来越像产品了"
+   }
+----------------------------------------------- #}
+
+{% set keyword_map = {} %}
+
+{% for item in keywords %}
+
+    {% if item["final_keyword"] %}
+
+        {% set _ = keyword_map.update({
+            item["journal_date"]: item["final_keyword"]
+        }) %}
+
+    {% endif %}
+
+{% endfor %}
+
+
+<section class="calendar">
+
+    <div class="calendar-weekdays">
+
+        <div>MON</div>
+        <div>TUE</div>
+        <div>WED</div>
+        <div>THU</div>
+        <div>FRI</div>
+        <div>SAT</div>
+        <div>SUN</div>
+
+    </div>
+
+
+    <div
+        class="calendar-grid"
+        id="calendar-grid"
+    ></div>
+
+</section>
+```
+
+</main>
+
+<footer class="site-footer">
+
+```
+<span>
+    Memento AI
+</span>
+
+<span>
+    Remember what matters.
+</span>
+```
+
+</footer>
+
+<script>
+
+/* ==================================================
+   Data from Flask
+================================================== */
+
+const YEAR = {{ year }};
+const MONTH = {{ month }};
+
+const KEYWORDS = {{ keyword_map | tojson }};
+
+
+/* ==================================================
+   Calendar utilities
+================================================== */
+
+function getDaysInMonth(
+    year,
+    month
+) {
+
+    return new Date(
+        year,
+        month,
+        0
+    ).getDate();
+
+}
+
+
+function getFirstWeekday(
+    year,
+    month
+) {
+
+    const date = new Date(
+        year,
+        month - 1,
+        1
+    );
+
+    /*
+        JavaScript:
+
+        Sunday = 0
+        Monday = 1
+        ...
+        Saturday = 6
+
+        Convert to:
+
+        Monday = 0
+        ...
+        Sunday = 6
+    */
+
+    return (
+        date.getDay() + 6
+    ) % 7;
+
+}
+
+
+/* ==================================================
+   Calendar
+================================================== */
+
+const calendarGrid =
+    document.getElementById(
+        "calendar-grid"
+    );
+
+
+const daysInMonth =
+    getDaysInMonth(
+        YEAR,
+        MONTH
+    );
+
+
+const firstWeekday =
+    getFirstWeekday(
+        YEAR,
+        MONTH
+    );
+
+
+/* ==================================================
+   Empty cells before the first day
+================================================== */
+
+for (
+    let i = 0;
+    i < firstWeekday;
+    i++
+) {
+
+    const emptyCell =
+        document.createElement(
+            "div"
+        );
+
+    emptyCell.className =
+        "calendar-day calendar-empty";
+
+    calendarGrid.appendChild(
+        emptyCell
+    );
+
+}
+
+
+/* ==================================================
+   Today
+================================================== */
+
+const today =
+    new Date();
+
+
+const todayString =
+    today.getFullYear()
+    + "-"
+    + String(
+        today.getMonth() + 1
+    ).padStart(2, "0")
+    + "-"
+    + String(
+        today.getDate()
+    ).padStart(2, "0");
+
+
+/* ==================================================
+   Create every date
+================================================== */
+
+for (
+    let day = 1;
+    day <= daysInMonth;
+    day++
+) {
+
+    const dateString =
+        YEAR
+        + "-"
+        + String(MONTH).padStart(2, "0")
+        + "-"
+        + String(day).padStart(2, "0");
+
+
+    /*
+        Every real date is an <a>.
+
+        This means dates without keywords
+        are also clickable.
+    */
+
+    const cell =
+        document.createElement(
+            "a"
+        );
+
+
+    cell.href =
+        "/day/"
+        + dateString;
+
+
+    cell.className =
+        "calendar-day";
+
+
+    if (
+        dateString ===
+        todayString
+    ) {
+
+        cell.classList.add(
+            "today"
+        );
+
+    }
+
+
+    /* ----------------------------------------------
+       Date number
+    ---------------------------------------------- */
+
+    const number =
+        document.createElement(
+            "span"
+        );
+
+    number.className =
+        "day-number";
+
+    number.textContent =
+        day;
+
+    cell.appendChild(
+        number
+    );
+
+
+    /* ----------------------------------------------
+       Keyword
+    ---------------------------------------------- */
+
+    const keyword =
+        KEYWORDS[dateString];
+
+
+    if (
+        keyword
+        &&
+        keyword.trim()
+    ) {
+
+        const keywordElement =
+            document.createElement(
+                "span"
+            );
+
+
+        keywordElement.className =
+            "day-keyword";
+
+
+        keywordElement.textContent =
+            keyword;
+
+
+        cell.appendChild(
+            keywordElement
+        );
+
+    }
+
+
+    calendarGrid.appendChild(
+        cell
+    );
+
+}
+
+
+/* ==================================================
+   Adaptive keyword font size
+================================================== */
+
+function fitKeyword(
+    element
+) {
+
+    let fontSize = 18;
+
+    const minimumFontSize = 11;
+
+
+    element.style.fontSize =
+        fontSize + "px";
+
+
+    /*
+        Keep the keyword inside
+        the fixed calendar cell.
+    */
+
+    const maxWidth =
+        element.parentElement.clientWidth
+        - 32;
+
+
+    const maxHeight =
+        76;
+
+
+    while (
+
+        (
+            element.scrollWidth >
+            maxWidth
+
+            ||
+
+            element.scrollHeight >
+            maxHeight
+        )
+
+        &&
+
+        fontSize >
+        minimumFontSize
+
+    ) {
+
+        fontSize -= 0.5;
+
+
+        element.style.fontSize =
+            fontSize + "px";
+
+    }
+
+}
+
+
+/* ==================================================
+   Fit all keywords after rendering
+================================================== */
+
+function fitAllKeywords() {
+
+    document
+        .querySelectorAll(
+            ".day-keyword"
+        )
+        .forEach(
+            function (element) {
+
+                fitKeyword(
+                    element
+                );
+
+            }
+        );
+
+}
+
+
+/*
+    Wait until browser has calculated
+    the actual calendar cell dimensions.
+*/
+
+window.requestAnimationFrame(
+    fitAllKeywords
+);
+
+
+/* ==================================================
+   Recalculate after window resize
+================================================== */
+
+window.addEventListener(
+    "resize",
+    fitAllKeywords
+);
+
+</script>
+
+</body>
+
+</html>

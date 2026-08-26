@@ -1,20 +1,26 @@
 from datetime import datetime
 
-from app.database.database import initialize_database
+
+from app.database.database import (
+    initialize_database,
+)
+
 
 from app.memory.memory_service import (
-    create_memory,
-    get_journal_memories,
-    get_single_memory,
-    edit_memory,
-    remove_memory,
+    add_memory,
+    get_memory,
+    get_memories,
+    update_memory,
+    delete_memory,
     get_supported_memory_types,
 )
+
 
 from app.analysis.analysis_service import (
     analyze_and_store_text_memory,
     get_memory_analyses,
 )
+
 
 from app.media.media_service import (
     choose_photo_files,
@@ -24,18 +30,33 @@ from app.media.media_service import (
 )
 
 
+from app.keyword.keyword_service import (
+    generate_daily_keyword_candidates,
+    get_daily_keyword,
+    get_monthly_keywords,
+    set_final_keyword,
+)
+
+
+from app.calendar.calendar_view import (
+    show_month_calendar,
+)
+
+
 # ============================================================
-# UI helpers
+# Header
 # ============================================================
 
 def print_header():
+
     print("\n===== MEMENTO AI =====")
 
 
+# ============================================================
+# Journal date
+# ============================================================
+
 def get_journal_date():
-    """
-    Ask the user for a journal date.
-    """
 
     while True:
 
@@ -47,7 +68,7 @@ def get_journal_date():
 
             datetime.strptime(
                 journal_date,
-                "%Y-%m-%d"
+                "%Y-%m-%d",
             )
 
             return journal_date
@@ -65,14 +86,11 @@ def get_journal_date():
 # ============================================================
 
 def display_ai_analysis(analyses):
-    """
-    Display stored AI analysis results.
-    """
 
     if not analyses:
 
         print(
-            "\nNo AI analysis results found."
+            "\nNo AI analysis found."
         )
 
         return
@@ -84,7 +102,8 @@ def display_ai_analysis(analyses):
     for analysis in analyses:
 
         analysis_type = analysis.get(
-            "analysis_type"
+            "analysis_type",
+            "unknown",
         )
 
         result = analysis.get(
@@ -102,7 +121,7 @@ def display_ai_analysis(analyses):
         if status == "unknown":
 
             print(
-                "Unable to determine reliably."
+                "Unknown"
             )
 
             reason = analysis.get(
@@ -115,45 +134,35 @@ def display_ai_analysis(analyses):
                     f"Reason: {reason}"
                 )
 
-        elif status == "failed":
+            continue
 
-            print(
-                "Analysis failed."
-            )
+        if isinstance(
+            result,
+            list,
+        ):
 
-            reason = analysis.get(
-                "reason"
-            )
-
-            if reason:
+            for item in result:
 
                 print(
-                    f"Reason: {reason}"
+                    f"- {item}"
+                )
+
+        elif isinstance(
+            result,
+            dict,
+        ):
+
+            for key, value in result.items():
+
+                print(
+                    f"{key}: {value}"
                 )
 
         else:
 
-            if isinstance(result, list):
-
-                for item in result:
-
-                    print(
-                        f"- {item}"
-                    )
-
-            elif isinstance(result, dict):
-
-                for key, value in result.items():
-
-                    print(
-                        f"{key}: {value}"
-                    )
-
-            else:
-
-                print(
-                    result
-                )
+            print(
+                result
+            )
 
     print(
         "\n======================="
@@ -161,13 +170,10 @@ def display_ai_analysis(analyses):
 
 
 # ============================================================
-# Add Text Memory
+# Add Text
 # ============================================================
 
 def add_text_memory():
-    """
-    Add a text memory and optionally analyze it with AI.
-    """
 
     journal_date = get_journal_date()
 
@@ -185,45 +191,42 @@ def add_text_memory():
 
     try:
 
-        memory_id = create_memory(
-            journal_date,
-            "text",
-            content
+        memory = add_memory(
+            journal_date=journal_date,
+            memory_type="text",
+            content=content,
+            source_type="text",
         )
 
-        print(
-            f"\nText memory saved successfully. "
-            f"Memory ID: {memory_id}"
-        )
-
-    except ValueError as error:
+    except Exception as error:
 
         print(
-            f"Error: {error}"
+            f"Could not save memory: {error}"
         )
 
         return
 
-    # --------------------------------------------------------
-    # Optional AI analysis
-    # --------------------------------------------------------
+    print(
+        f"\nText memory saved successfully. "
+        f"Memory ID: {memory['id']}"
+    )
 
-    analyze_choice = input(
+    analyze = input(
         "\nAnalyze this memory with AI? (y/n): "
     ).strip().lower()
 
-    if analyze_choice != "y":
+    if analyze != "y":
 
         return
 
+    print(
+        "\nAnalyzing memory with AI..."
+    )
+
     try:
 
-        print(
-            "\nAnalyzing memory with AI..."
-        )
-
         analyses = analyze_and_store_text_memory(
-            memory_id,
+            memory["id"],
             content,
         )
 
@@ -239,157 +242,212 @@ def add_text_memory():
 
 
 # ============================================================
-# Add Photo Memory
+# Add Photo
 # ============================================================
 
 def add_photo_memory():
-    """
-    Add one or more photo memories.
-
-    The photo picker may return multiple files.
-    Each selected photo is stored as a separate
-    memory record.
-    """
 
     journal_date = get_journal_date()
 
     print(
-        "\nOpening photo picker..."
+        "\nChoose photo files."
     )
 
-    file_paths = choose_photo_files()
+    try:
+
+        file_paths = choose_photo_files()
+
+    except Exception as error:
+
+        print(
+            f"Could not choose photo: {error}"
+        )
+
+        return
 
     if not file_paths:
 
         print(
-            "No photos selected. "
-            "Photo memory cancelled."
+            "No photo selected."
         )
 
         return
 
     try:
 
-        saved_paths = save_photo(
+        saved_files = save_photo(
             file_paths,
-            journal_date
+            journal_date,
         )
 
-        if not isinstance(
-            saved_paths,
-            list
-        ):
-
-            saved_paths = [
-                saved_paths
-            ]
+    except Exception as error:
 
         print(
-            f"\n{len(saved_paths)} "
-            f"photo(s) saved successfully."
+            f"Could not save photo: {error}"
         )
 
-        for stored_path in saved_paths:
+        return
 
-            memory_id = create_memory(
-                journal_date,
-                "photo",
-                stored_path
+    if isinstance(
+        saved_files,
+        str,
+    ):
+
+        saved_files = [
+            saved_files
+        ]
+
+    for file_path in saved_files:
+
+        try:
+
+            memory = add_memory(
+                journal_date=journal_date,
+                memory_type="photo",
+                content=file_path,
+                source_type="photo",
+                file_path=file_path,
             )
 
             print(
-                f"\nMemory ID: {memory_id}"
+                f"\nPhoto memory saved successfully. "
+                f"Memory ID: {memory['id']}"
             )
+
+        except Exception as error:
 
             print(
-                f"Photo: {stored_path}"
+                f"Could not save photo memory: {error}"
             )
-
-    except (
-        FileNotFoundError,
-        ValueError
-    ) as error:
-
-        print(
-            f"Error: {error}"
-        )
 
 
 # ============================================================
-# Add Music Memory
+# Add Music
 # ============================================================
 
 def add_music_memory():
-    """
-    Add a music memory using a URL.
-    """
 
     journal_date = get_journal_date()
 
-    music_url = input(
-        "Enter the music URL: "
+    url = input(
+        "Enter music URL: "
     ).strip()
+
+    if not url:
+
+        print(
+            "Music URL cannot be empty."
+        )
+
+        return
 
     try:
 
-        music_url = validate_music_url(
-            music_url
+        valid = validate_music_url(
+            url
         )
 
-        memory_id = create_memory(
-            journal_date,
-            "music",
-            music_url
+    except Exception as error:
+
+        print(
+            f"Invalid music URL: {error}"
+        )
+
+        return
+
+    if valid is False:
+
+        print(
+            "Invalid music URL."
+        )
+
+        return
+
+    try:
+
+        memory = add_memory(
+            journal_date=journal_date,
+            memory_type="music",
+            content=url,
+            source_type="music",
+            file_path=None,
+            platform="url",
         )
 
         print(
             f"\nMusic memory saved successfully. "
-            f"Memory ID: {memory_id}"
+            f"Memory ID: {memory['id']}"
         )
 
-    except ValueError as error:
+    except Exception as error:
 
         print(
-            f"Error: {error}"
+            f"Could not save music memory: {error}"
         )
 
 
 # ============================================================
-# Add Video Memory
+# Add Video
 # ============================================================
 
 def add_video_memory():
-    """
-    Add a video memory using a URL.
-    """
 
     journal_date = get_journal_date()
 
-    video_url = input(
-        "Enter the video URL: "
+    url = input(
+        "Enter video URL: "
     ).strip()
+
+    if not url:
+
+        print(
+            "Video URL cannot be empty."
+        )
+
+        return
 
     try:
 
-        video_url = validate_video_url(
-            video_url
+        valid = validate_video_url(
+            url
         )
 
-        memory_id = create_memory(
-            journal_date,
-            "video",
-            video_url
+    except Exception as error:
+
+        print(
+            f"Invalid video URL: {error}"
+        )
+
+        return
+
+    if valid is False:
+
+        print(
+            "Invalid video URL."
+        )
+
+        return
+
+    try:
+
+        memory = add_memory(
+            journal_date=journal_date,
+            memory_type="video",
+            content=url,
+            source_type="video",
+            file_path=None,
+            platform="url",
         )
 
         print(
             f"\nVideo memory saved successfully. "
-            f"Memory ID: {memory_id}"
+            f"Memory ID: {memory['id']}"
         )
 
-    except ValueError as error:
+    except Exception as error:
 
         print(
-            f"Error: {error}"
+            f"Could not save video memory: {error}"
         )
 
 
@@ -398,15 +456,22 @@ def add_video_memory():
 # ============================================================
 
 def view_journal():
-    """
-    Display all memories for a specific date.
-    """
 
     journal_date = get_journal_date()
 
-    memories = get_journal_memories(
-        journal_date
-    )
+    try:
+
+        memories = get_memories(
+            journal_date
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load journal: {error}"
+        )
+
+        return
 
     print(
         f"\n===== JOURNAL: {journal_date} ====="
@@ -415,204 +480,10 @@ def view_journal():
     if not memories:
 
         print(
-            "No memories found for this date."
+            "No memories found."
         )
 
         return
-
-    for memory in memories:
-
-        print(
-            "\n------------------------------"
-        )
-
-        print(
-            f"Memory ID: {memory['id']}"
-        )
-
-        print(
-            f"Type: {memory['memory_type']}"
-        )
-
-        print(
-            f"Created: {memory['created_at']}"
-        )
-
-        print(
-            f"Updated: {memory['updated_at']}"
-        )
-
-        print(
-            f"Content: {memory['content']}"
-        )
-
-        if memory.get("file_path"):
-
-            print(
-                f"File: {memory['file_path']}"
-            )
-
-        if memory.get("platform"):
-
-            print(
-                f"Platform: {memory['platform']}"
-            )
-
-        # ----------------------------------------------------
-        # Show AI analysis
-        # ----------------------------------------------------
-
-        if memory["memory_type"] == "text":
-
-            try:
-
-                analyses = get_memory_analyses(
-                    memory["id"]
-                )
-
-                if analyses:
-
-                    print(
-                        "\nAI Analysis:"
-                    )
-
-                    for analysis in analyses:
-
-                        analysis_type = analysis.get(
-                            "analysis_type"
-                        )
-
-                        status = analysis.get(
-                            "status"
-                        )
-
-                        result = analysis.get(
-                            "result"
-                        )
-
-                        print(
-                            f"- {analysis_type}: ",
-                            end=""
-                        )
-
-                        if status == "unknown":
-
-                            print(
-                                "unknown"
-                            )
-
-                        elif isinstance(
-                            result,
-                            list
-                        ):
-
-                            print(
-                                ", ".join(
-                                    str(item)
-                                    for item in result
-                                )
-                            )
-
-                        else:
-
-                            print(
-                                result
-                            )
-
-            except Exception:
-
-                pass
-
-    print(
-        "\n------------------------------"
-    )
-
-
-# ============================================================
-# View AI Analysis
-# ============================================================
-
-def view_ai_analysis():
-    """
-    Display AI analysis for a specific memory.
-    """
-
-    try:
-
-        memory_id = int(
-            input(
-                "\nEnter Memory ID: "
-            )
-        )
-
-    except ValueError:
-
-        print(
-            "Invalid Memory ID."
-        )
-
-        return
-
-    memory = get_single_memory(
-        memory_id
-    )
-
-    if not memory:
-
-        print(
-            "Memory not found."
-        )
-
-        return
-
-    try:
-
-        analyses = get_memory_analyses(
-            memory_id
-        )
-
-        print(
-            f"\n===== AI ANALYSIS "
-            f"FOR MEMORY {memory_id} ====="
-        )
-
-        display_ai_analysis(
-            analyses
-        )
-
-    except Exception as error:
-
-        print(
-            f"Could not load AI analysis: {error}"
-        )
-
-
-# ============================================================
-# Edit Memory
-# ============================================================
-
-def edit_existing_memory():
-    """
-    Edit an existing memory.
-    """
-
-    journal_date = get_journal_date()
-
-    memories = get_journal_memories(
-        journal_date
-    )
-
-    if not memories:
-
-        print(
-            "No memories found for this date."
-        )
-
-        return
-
-    print(
-        f"\n===== MEMORIES ON {journal_date} ====="
-    )
 
     for memory in memories:
 
@@ -628,48 +499,429 @@ def edit_existing_memory():
             f"Content: {memory['content']}"
         )
 
+        if memory.get(
+            "platform"
+        ):
+
+            print(
+                f"Platform: {memory['platform']}"
+            )
+
+        if memory.get(
+            "file_path"
+        ):
+
+            print(
+                f"File: {memory['file_path']}"
+            )
+
         print(
             f"Created: {memory['created_at']}"
         )
 
-        print(
-            f"Updated: {memory['updated_at']}"
+    print(
+        "\n================================"
+    )
+
+
+# ============================================================
+# View AI Analysis
+# ============================================================
+
+def view_ai_analysis():
+
+    journal_date = get_journal_date()
+
+    try:
+
+        memories = get_memories(
+            journal_date
         )
+
+    except Exception as error:
+
+        print(
+            f"Could not load journal: {error}"
+        )
+
+        return
+
+    if not memories:
+
+        print(
+            "\nNo memories found for this date."
+        )
+
+        return
+
+    found = False
+
+    for memory in memories:
+
+        try:
+
+            analyses = get_memory_analyses(
+                memory["id"]
+            )
+
+        except Exception as error:
+
+            print(
+                f"Could not load analysis "
+                f"for memory {memory['id']}: "
+                f"{error}"
+            )
+
+            continue
+
+        if not analyses:
+
+            continue
+
+        found = True
+
+        print(
+            f"\n===== MEMORY {memory['id']} ====="
+        )
+
+        print(
+            f"Type: {memory['memory_type']}"
+        )
+
+        print(
+            f"Content: {memory['content']}"
+        )
+
+        display_ai_analysis(
+            analyses
+        )
+
+    if not found:
+
+        print(
+            "\nNo AI analysis found."
+        )
+
+
+# ============================================================
+# Daily Keyword
+# ============================================================
+
+def daily_keyword():
+
+    journal_date = get_journal_date()
+
+    try:
+
+        memories = get_memories(
+            journal_date
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load memories: {error}"
+        )
+
+        return
+
+    if not memories:
+
+        print(
+            "\nNo memories found for this date."
+        )
+
+        print(
+            "Add some memories first."
+        )
+
+        return
+
+    print(
+        "\n===== DAILY KEYWORD ====="
+    )
+
+    try:
+
+        existing = get_daily_keyword(
+            journal_date
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load daily keyword: {error}"
+        )
+
+        existing = None
+
+    if existing:
+
+        final_keyword = existing.get(
+            "final_keyword"
+        )
+
+        if final_keyword:
+
+            print(
+                f"\nCurrent keyword: "
+                f"{final_keyword}"
+            )
+
+            print(
+                f"Source: "
+                f"{existing.get('keyword_source')}"
+            )
+
+    print(
+        "\nGenerating AI keyword candidates..."
+    )
+
+    try:
+
+        candidates = (
+            generate_daily_keyword_candidates(
+                journal_date
+            )
+        )
+
+    except Exception as error:
+
+        print(
+            f"\nAI keyword generation failed: {error}"
+        )
+
+        return
+
+    if not candidates:
+
+        print(
+            "\nAI could not determine "
+            "a reliable keyword."
+        )
+
+        return
+
+    print(
+        "\nAI candidates:"
+    )
+
+    for index, candidate in enumerate(
+        candidates,
+        start=1,
+    ):
+
+        print(
+            f"{index}. {candidate}"
+        )
+
+    print(
+        "\nYou can choose an AI keyword "
+        "or write your own."
+    )
+
+    choice = input(
+        "\nEnter the number, "
+        "or press Enter for your own: "
+    ).strip()
+
+    selected_keyword = None
+    source = "user"
+
+    if choice.isdigit():
+
+        index = int(
+            choice
+        ) - 1
+
+        if (
+            0 <= index < len(candidates)
+        ):
+
+            selected_keyword = (
+                candidates[index]
+            )
+
+            source = "ai"
+
+    if selected_keyword is None:
+
+        selected_keyword = input(
+            "\nEnter your own keyword: "
+        ).strip()
+
+        if not selected_keyword:
+
+            print(
+                "Keyword cannot be empty."
+            )
+
+            return
+
+        source = "user"
+
+    try:
+
+        set_final_keyword(
+            journal_date,
+            selected_keyword,
+            source,
+        )
+
+    except Exception as error:
+
+        print(
+            f"\nCould not save keyword: {error}"
+        )
+
+        return
+
+    print(
+        "\n===== DAILY KEYWORD ====="
+    )
+
+    print(
+        f"Date: {journal_date}"
+    )
+
+    print(
+        f"Keyword: {selected_keyword}"
+    )
+
+    print(
+        f"Source: {source}"
+    )
+
+    print(
+        "========================="
+    )
+
+
+# ============================================================
+# Monthly Memory Calendar
+# ============================================================
+
+def view_monthly_calendar():
+
+    print(
+        "\n===== MONTHLY MEMORY CALENDAR ====="
+    )
+
+    while True:
+
+        year_input = input(
+            "Enter year (YYYY): "
+        ).strip()
+
+        try:
+
+            year = int(
+                year_input
+            )
+
+        except ValueError:
+
+            print(
+                "Invalid year."
+            )
+
+            continue
+
+        if year < 1:
+
+            print(
+                "Invalid year."
+            )
+
+            continue
+
+        break
+
+    while True:
+
+        month_input = input(
+            "Enter month (1-12): "
+        ).strip()
+
+        try:
+
+            month = int(
+                month_input
+            )
+
+        except ValueError:
+
+            print(
+                "Invalid month."
+            )
+
+            continue
+
+        if not 1 <= month <= 12:
+
+            print(
+                "Invalid month."
+            )
+
+            continue
+
+        break
+
+    try:
+
+        show_month_calendar(
+            year,
+            month,
+        )
+
+    except Exception as error:
+
+        print(
+            f"\nUnable to display calendar: "
+            f"{error}"
+        )
+
+
+# ============================================================
+# Edit Memory
+# ============================================================
+
+def edit_existing_memory():
 
     try:
 
         memory_id = int(
             input(
-                "\nEnter the Memory ID "
-                "you want to edit: "
-            )
+                "Enter memory ID to edit: "
+            ).strip()
         )
 
     except ValueError:
 
         print(
-            "Invalid Memory ID."
+            "Invalid memory ID."
         )
 
         return
 
-    memory = get_single_memory(
-        memory_id
-    )
+    try:
 
-    if not memory:
+        memory = get_memory(
+            memory_id
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load memory: {error}"
+        )
+
+        return
+
+    if memory is None:
 
         print(
             "Memory not found."
-        )
-
-        return
-
-    if memory["journal_date"] != journal_date:
-
-        print(
-            "This memory does not belong "
-            "to the selected journal."
         )
 
         return
@@ -696,27 +948,29 @@ def edit_existing_memory():
 
     try:
 
-        success = edit_memory(
+        result = update_memory(
             memory_id,
-            new_content
+            new_content=new_content,
         )
 
-        if success:
-
-            print(
-                "\nMemory updated successfully."
-            )
-
-        else:
-
-            print(
-                "\nMemory could not be updated."
-            )
-
-    except ValueError as error:
+    except Exception as error:
 
         print(
-            f"Error: {error}"
+            f"Could not update memory: {error}"
+        )
+
+        return
+
+    if result:
+
+        print(
+            "Memory updated successfully."
+        )
+
+    else:
+
+        print(
+            "Memory was not updated."
         )
 
 
@@ -725,64 +979,38 @@ def edit_existing_memory():
 # ============================================================
 
 def delete_existing_memory():
-    """
-    Delete an existing memory.
-    """
-
-    journal_date = get_journal_date()
-
-    memories = get_journal_memories(
-        journal_date
-    )
-
-    if not memories:
-
-        print(
-            "No memories found for this date."
-        )
-
-        return
-
-    print(
-        f"\n===== MEMORIES ON {journal_date} ====="
-    )
-
-    for memory in memories:
-
-        print(
-            f"\nMemory ID: {memory['id']}"
-        )
-
-        print(
-            f"Type: {memory['memory_type']}"
-        )
-
-        print(
-            f"Content: {memory['content']}"
-        )
 
     try:
 
         memory_id = int(
             input(
-                "\nEnter the Memory ID "
-                "you want to delete: "
-            )
+                "Enter memory ID to delete: "
+            ).strip()
         )
 
     except ValueError:
 
         print(
-            "Invalid Memory ID."
+            "Invalid memory ID."
         )
 
         return
 
-    memory = get_single_memory(
-        memory_id
-    )
+    try:
 
-    if not memory:
+        memory = get_memory(
+            memory_id
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load memory: {error}"
+        )
+
+        return
+
+    if memory is None:
 
         print(
             "Memory not found."
@@ -790,21 +1018,24 @@ def delete_existing_memory():
 
         return
 
-    if memory["journal_date"] != journal_date:
+    print(
+        f"\nMemory ID: {memory['id']}"
+    )
 
-        print(
-            "This memory does not belong "
-            "to the selected journal."
-        )
+    print(
+        f"Type: {memory['memory_type']}"
+    )
 
-        return
+    print(
+        f"Content: {memory['content']}"
+    )
 
-    confirmation = input(
+    confirm = input(
         "\nAre you sure you want to delete "
         "this memory? (y/n): "
     ).strip().lower()
 
-    if confirmation != "y":
+    if confirm != "y":
 
         print(
             "Deletion cancelled."
@@ -814,57 +1045,71 @@ def delete_existing_memory():
 
     try:
 
-        success = remove_memory(
+        result = delete_memory(
             memory_id
         )
 
-        if success:
-
-            print(
-                "\nMemory deleted successfully."
-            )
-
-        else:
-
-            print(
-                "\nMemory could not be deleted."
-            )
-
-    except ValueError as error:
+    except Exception as error:
 
         print(
-            f"Error: {error}"
+            f"Could not delete memory: {error}"
+        )
+
+        return
+
+    if result:
+
+        print(
+            "Memory deleted successfully."
+        )
+
+    else:
+
+        print(
+            "Memory was not deleted."
         )
 
 
 # ============================================================
-# Show supported memory types
+# Show Memory Types
 # ============================================================
 
 def show_memory_types():
-    """
-    Display supported memory types.
-    """
 
-    print(
-        "\nSupported memory types:"
-    )
+    try:
 
-    for memory_type in get_supported_memory_types():
+        memory_types = (
+            get_supported_memory_types()
+        )
+
+    except Exception as error:
 
         print(
-            f"- {memory_type.capitalize()}"
+            f"Could not load memory types: {error}"
         )
+
+        return
+
+    print(
+        "\n===== MEMORY TYPES ====="
+    )
+
+    for memory_type in memory_types:
+
+        print(
+            f"- {memory_type}"
+        )
+
+    print(
+        "========================"
+    )
 
 
 # ============================================================
-# Main application
+# Main
 # ============================================================
 
 def main():
-    """
-    Main application loop.
-    """
 
     initialize_database()
 
@@ -872,30 +1117,57 @@ def main():
 
         print_header()
 
-        print("1. Add Text")
-        print("2. Add Photo")
-        print("3. Add Music")
-        print("4. Add Video")
-        print("5. View Journal")
-        print("6. View AI Analysis")
-        print("7. Edit Memory")
-        print("8. Delete Memory")
-        print("9. Show Memory Types")
-        print("10. Exit")
+        print(
+            "1. Add Text"
+        )
 
-        try:
+        print(
+            "2. Add Photo"
+        )
 
-            choice = input(
-                "\nChoose an option: "
-            ).strip()
+        print(
+            "3. Add Music"
+        )
 
-        except KeyboardInterrupt:
+        print(
+            "4. Add Video"
+        )
 
-            print(
-                "\n\nMemento AI closed."
-            )
+        print(
+            "5. View Journal"
+        )
 
-            break
+        print(
+            "6. View AI Analysis"
+        )
+
+        print(
+            "7. Daily Keyword"
+        )
+
+        print(
+            "8. Monthly Memory Calendar"
+        )
+
+        print(
+            "9. Edit Memory"
+        )
+
+        print(
+            "10. Delete Memory"
+        )
+
+        print(
+            "11. Show Memory Types"
+        )
+
+        print(
+            "12. Exit"
+        )
+
+        choice = input(
+            "\nChoose an option: "
+        ).strip()
 
         if choice == "1":
 
@@ -923,20 +1195,28 @@ def main():
 
         elif choice == "7":
 
-            edit_existing_memory()
+            daily_keyword()
 
         elif choice == "8":
 
-            delete_existing_memory()
+            view_monthly_calendar()
 
         elif choice == "9":
 
-            show_memory_types()
+            edit_existing_memory()
 
         elif choice == "10":
 
+            delete_existing_memory()
+
+        elif choice == "11":
+
+            show_memory_types()
+
+        elif choice == "12":
+
             print(
-                "\nThank you for using Memento AI."
+                "\nGoodbye."
             )
 
             break
@@ -944,8 +1224,7 @@ def main():
         else:
 
             print(
-                "\nInvalid option. "
-                "Please choose 1-10."
+                "\nInvalid option."
             )
 
 
@@ -954,4 +1233,5 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
+
     main()
