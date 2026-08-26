@@ -57,11 +57,12 @@ def validate_ai_candidates(candidates):
     """
     Validate AI-generated keyword candidates.
 
-    AI may return up to three candidates.
-
-    Candidates that are empty, invalid, or longer than
-    seven characters are skipped instead of causing the
-    entire generation process to fail.
+    Rules:
+        - Must be a list.
+        - Maximum 3 candidates.
+        - Each candidate must contain 1-7 characters.
+        - Empty candidates are rejected.
+        - Duplicate candidates are removed.
     """
 
     if not isinstance(candidates, list):
@@ -69,32 +70,41 @@ def validate_ai_candidates(candidates):
             "AI candidates must be a list."
         )
 
+    if not candidates:
+        raise ValueError(
+            "AI candidates cannot be empty."
+        )
+
+    if len(candidates) > MAX_AI_CANDIDATES:
+        raise ValueError(
+            f"AI may provide at most "
+            f"{MAX_AI_CANDIDATES} candidates."
+        )
+
     cleaned = []
 
     for candidate in candidates:
 
         if not isinstance(candidate, str):
-            continue
+            raise ValueError(
+                "Each AI candidate must be a string."
+            )
 
         candidate = candidate.strip()
 
         if not candidate:
-            continue
+            raise ValueError(
+                "AI keyword cannot be empty."
+            )
 
-        # AI keywords must be no more than 7 characters.
         if len(candidate) > MAX_AI_KEYWORD_LENGTH:
-            continue
+            raise ValueError(
+                "AI-generated keywords must be "
+                "no more than 7 characters."
+            )
 
         if candidate not in cleaned:
             cleaned.append(candidate)
-
-        if len(cleaned) >= MAX_AI_CANDIDATES:
-            break
-
-    if not cleaned:
-        raise ValueError(
-            "No valid AI keyword candidates were returned."
-        )
 
     return cleaned
 
@@ -199,7 +209,135 @@ def save_ai_candidates(
 
 
 # ============================================================
-# Generate daily keyword candidates
+# Set final keyword
+# ============================================================
+
+def set_final_keyword(
+    journal_date,
+    keyword,
+    source="user",
+):
+    """
+    Set the final keyword for a journal day.
+
+    source:
+        ai
+        user
+
+    User keywords have no length restriction.
+    AI keywords must obey the 7-character limit.
+    """
+
+    source = source.lower().strip()
+
+    if source not in {
+        "ai",
+        "user",
+    }:
+        raise ValueError(
+            "Source must be 'ai' or 'user'."
+        )
+
+    if source == "user":
+
+        keyword = validate_user_keyword(
+            keyword
+        )
+
+    else:
+
+        candidates = validate_ai_candidates(
+            [keyword]
+        )
+
+        keyword = candidates[0]
+
+    journal = get_or_create_journal(
+        journal_date
+    )
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    timestamp = current_timestamp()
+
+    cursor.execute(
+        """
+        SELECT id
+        FROM daily_keywords
+        WHERE journal_id = ?
+        """,
+        (journal["id"],),
+    )
+
+    existing = cursor.fetchone()
+
+    if source == "user":
+        user_keyword = keyword
+    else:
+        user_keyword = None
+
+    if existing:
+
+        cursor.execute(
+            """
+            UPDATE daily_keywords
+            SET
+                user_keyword = ?,
+                final_keyword = ?,
+                keyword_source = ?,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                user_keyword,
+                keyword,
+                source,
+                timestamp,
+                existing["id"],
+            ),
+        )
+
+        keyword_id = existing["id"]
+
+    else:
+
+        cursor.execute(
+            """
+            INSERT INTO daily_keywords (
+                journal_id,
+                journal_date,
+                ai_candidates,
+                user_keyword,
+                final_keyword,
+                keyword_source,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                journal["id"],
+                journal_date,
+                None,
+                user_keyword,
+                keyword,
+                source,
+                timestamp,
+                timestamp,
+            ),
+        )
+
+        keyword_id = cursor.lastrowid
+
+    connection.commit()
+    connection.close()
+
+    return keyword_id
+
+
+# ============================================================
+# Generate AI daily keyword candidates
 # ============================================================
 
 def generate_daily_keyword_candidates(
@@ -230,6 +368,9 @@ def generate_daily_keyword_candidates(
 
     for memory in memories:
 
+        # sqlite3.Row does NOT support .get()
+        # so we use [] access here.
+
         memory_type = memory["memory_type"]
         content = memory["content"]
 
@@ -253,19 +394,19 @@ def generate_daily_keyword_candidates(
 
     prompt = f"""
 你正在为一款名为 Memento AI 的私人电子日记应用，
-为用户的一天提炼一个非常简短的关键词。
+为用户的一天提炼非常简短、有记忆点的关键词。
 
 日期：
 {journal_date}
 
-当天记录：
+当天真实记录：
 {daily_content}
 
-请从当天真实记录中提炼出最多 3 个关键词候选。
+请从当天真实记录中提炼最多 3 个关键词候选。
 
 严格遵守以下要求：
 
-1. 每个关键词最多 7 个中文字符。
+1. 每个关键词必须是 1-7 个字符。
 2. 尽量控制在 2-7 个字符。
 3. 不要凭空创造当天没有发生的事情。
 4. 不要强行推断用户没有表达出来的情绪。
@@ -276,11 +417,11 @@ def generate_daily_keyword_candidates(
 8. 可以有轻微的文学感、生活感和画面感。
 9. 关键词应该像用户多年后翻看月历时，
    能够立刻想起这一天的一个小注脚。
-10. 优先保留当天最有辨识度的事件、感受、
-    人、地点、行动或瞬间。
+10. 优先保留当天最有辨识度的事件、人物、
+    地点、行动或瞬间。
 11. 如果当天内容不足以形成可靠关键词，
     返回空列表。
-12. 严格保证每个关键词不超过 7 个字符。
+12. 每一个关键词都必须严格不超过 7 个字符。
 
 输出必须是严格 JSON，不要添加任何解释：
 
@@ -353,13 +494,13 @@ def generate_daily_keyword_candidates(
         candidates
     )
 
-    # Save all valid AI candidates.
+    # Save all AI candidates.
     save_ai_candidates(
         journal_date,
         candidates,
     )
 
-    # Automatically select the first valid AI candidate
+    # Automatically use the first AI candidate
     # as the final keyword shown on the calendar.
     set_final_keyword(
         journal_date,
@@ -368,138 +509,6 @@ def generate_daily_keyword_candidates(
     )
 
     return candidates
-
-
-# ============================================================
-# Set final keyword
-# ============================================================
-
-def set_final_keyword(
-    journal_date,
-    keyword,
-    source="user",
-):
-    """
-    Set the final keyword for a journal day.
-
-    source:
-        ai
-        user
-
-    User keywords have no length restriction.
-    AI keywords must obey the 7-character limit.
-    """
-
-    source = source.lower().strip()
-
-    if source not in {
-        "ai",
-        "user",
-    }:
-
-        raise ValueError(
-            "Source must be 'ai' or 'user'."
-        )
-
-    if source == "user":
-
-        keyword = validate_user_keyword(
-            keyword
-        )
-
-    else:
-
-        candidates = validate_ai_candidates(
-            [keyword]
-        )
-
-        keyword = candidates[0]
-
-    journal = get_or_create_journal(
-        journal_date
-    )
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    timestamp = current_timestamp()
-
-    cursor.execute(
-        """
-        SELECT id
-        FROM daily_keywords
-        WHERE journal_id = ?
-        """,
-        (journal["id"],),
-    )
-
-    existing = cursor.fetchone()
-
-    if source == "user":
-
-        user_keyword = keyword
-
-    else:
-
-        user_keyword = None
-
-    if existing:
-
-        cursor.execute(
-            """
-            UPDATE daily_keywords
-            SET
-                user_keyword = ?,
-                final_keyword = ?,
-                keyword_source = ?,
-                updated_at = ?
-            WHERE id = ?
-            """,
-            (
-                user_keyword,
-                keyword,
-                source,
-                timestamp,
-                existing["id"],
-            ),
-        )
-
-        keyword_id = existing["id"]
-
-    else:
-
-        cursor.execute(
-            """
-            INSERT INTO daily_keywords (
-                journal_id,
-                journal_date,
-                ai_candidates,
-                user_keyword,
-                final_keyword,
-                keyword_source,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                journal["id"],
-                journal_date,
-                None,
-                user_keyword,
-                keyword,
-                source,
-                timestamp,
-                timestamp,
-            ),
-        )
-
-        keyword_id = cursor.lastrowid
-
-    connection.commit()
-    connection.close()
-
-    return keyword_id
 
 
 # ============================================================
@@ -566,6 +575,9 @@ def get_monthly_keywords(
 ):
     """
     Get final keywords for a month.
+
+    This is the data source
+    for the monthly calendar UI.
     """
 
     if not 1 <= month <= 12:
@@ -593,7 +605,9 @@ def get_monthly_keywords(
           AND final_keyword != ''
         ORDER BY journal_date ASC
         """,
-        (month_prefix + "%",),
+        (
+            month_prefix + "%",
+        ),
     )
 
     rows = cursor.fetchall()

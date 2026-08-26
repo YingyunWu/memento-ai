@@ -1,7 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+)
 
 from app.keyword.keyword_service import (
     get_monthly_keywords,
+    get_daily_keyword,
     generate_daily_keyword_candidates,
     set_final_keyword,
 )
@@ -9,6 +16,7 @@ from app.keyword.keyword_service import (
 from app.memory.memory_service import (
     get_journal_memories,
     create_memory,
+    edit_memory,
 )
 
 
@@ -19,6 +27,10 @@ app = Flask(
 )
 
 
+# ============================================================
+# Home
+# ============================================================
+
 @app.route("/")
 def index():
 
@@ -26,6 +38,10 @@ def index():
         "index.html"
     )
 
+
+# ============================================================
+# Calendar
+# ============================================================
 
 @app.route(
     "/calendar/<int:year>/<int:month>"
@@ -48,6 +64,10 @@ def calendar_view(
     )
 
 
+# ============================================================
+# Daily journal
+# ============================================================
+
 @app.route(
     "/day/<journal_date>",
     methods=["GET", "POST"],
@@ -56,12 +76,20 @@ def day_view(
     journal_date,
 ):
 
+    # ========================================================
+    # POST
+    # ========================================================
+
     if request.method == "POST":
 
         action = request.form.get(
             "action",
-            "memory",
+            "",
         )
+
+        # ====================================================
+        # Add new memory
+        # ====================================================
 
         if action == "memory":
 
@@ -79,27 +107,40 @@ def day_view(
                     source_type="text",
                 )
 
-                try:
+                # create_memory() already handles
+                # automatic AI keyword updating.
+                #
+                # No additional AI call is needed here.
 
-                    candidates = (
-                        generate_daily_keyword_candidates(
-                            journal_date
-                        )
-                    )
+        # ====================================================
+        # Edit existing memory
+        # ====================================================
 
-                    if candidates:
+        elif action == "edit_memory":
 
-                        set_final_keyword(
-                            journal_date,
-                            candidates[0],
-                            source="ai",
-                        )
+            memory_id = request.form.get(
+                "memory_id",
+                "",
+            )
 
-                except Exception as exc:
+            content = request.form.get(
+                "content",
+                "",
+            ).strip()
 
-                    print(
-                        f"AI keyword generation failed: {exc}"
-                    )
+            if memory_id and content:
+
+                edit_memory(
+                    memory_id=int(memory_id),
+                    new_content=content,
+                )
+
+                # edit_memory() already handles
+                # automatic AI keyword updating.
+
+        # ====================================================
+        # User edits keyword
+        # ====================================================
 
         elif action == "keyword":
 
@@ -110,19 +151,34 @@ def day_view(
 
             if keyword:
 
-                try:
+                set_final_keyword(
+                    journal_date=journal_date,
+                    keyword=keyword,
+                    source="user",
+                )
 
-                    set_final_keyword(
-                        journal_date,
-                        keyword,
-                        source="user",
-                    )
+        # ====================================================
+        # User explicitly requests AI keyword update
+        # ====================================================
 
-                except Exception as exc:
+        elif action == "ai_keyword":
 
-                    print(
-                        f"Keyword update failed: {exc}"
-                    )
+            try:
+
+                generate_daily_keyword_candidates(
+                    journal_date
+                )
+
+            except Exception as error:
+
+                print(
+                    "Manual AI keyword update failed: "
+                    f"{error}"
+                )
+
+        # ====================================================
+        # Redirect after POST
+        # ====================================================
 
         return redirect(
             url_for(
@@ -131,29 +187,17 @@ def day_view(
             )
         )
 
+    # ========================================================
+    # GET
+    # ========================================================
 
     memories = get_journal_memories(
         journal_date
     )
 
-
-    keyword_data = None
-
-
-    monthly_keywords = get_monthly_keywords(
-        int(journal_date[:4]),
-        int(journal_date[5:7]),
+    keyword_data = get_daily_keyword(
+        journal_date
     )
-
-
-    for item in monthly_keywords:
-
-        if item["journal_date"] == journal_date:
-
-            keyword_data = item
-
-            break
-
 
     return render_template(
         "day.html",
@@ -162,6 +206,10 @@ def day_view(
         keyword=keyword_data,
     )
 
+
+# ============================================================
+# Run application
+# ============================================================
 
 if __name__ == "__main__":
 

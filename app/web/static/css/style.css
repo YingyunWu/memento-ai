@@ -969,3 +969,98 @@ nav a:hover {
     }
 
 }
+#keyword-form {
+    margin: 0;
+}
+
+#keyword-input {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    outline: none;
+    padding: 0;
+}
+/* ============================================================
+   Inline editing
+   ============================================================ */
+
+#keyword-form {
+    margin: 0;
+}
+
+#keyword-input {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    outline: none;
+    padding: 0;
+}
+
+
+.memory-edit-form {
+    display: none;
+    margin: 0;
+}
+
+
+.memory-edit-form textarea {
+    width: 100%;
+    min-height: 80px;
+    box-sizing: border-box;
+    resize: vertical;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    outline: none;
+    padding: 0;
+}
+
+
+.new-memory-form {
+    display: none;
+    margin-top: 20px;
+}
+
+
+.new-memory-form textarea {
+    width: 100%;
+    min-height: 100px;
+    box-sizing: border-box;
+    resize: vertical;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    outline: none;
+    padding: 0;
+}
+
+
+.add-memory-button {
+    margin-top: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+
+.add-memory-button:hover {
+    opacity: 1;
+}

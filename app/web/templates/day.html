@@ -1,258 +1,727 @@
 <!DOCTYPE html>
-
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
 
-```
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>
-    {{ journal_date }} — Memento
-</title>
+    <title>
+        {{ journal_date }} — Memento
+    </title>
 
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/style.css') }}"
->
-```
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 
 </head>
+
 
 <body>
 
 <header class="site-header">
 
-```
-<a
-    href="/"
-    class="logo"
->
-    Memento
-</a>
-
-
-<nav>
-
-    <a href="/">
-        Today
-    </a>
-
     <a
-        href="/calendar/{{ journal_date[:4] }}/{{ journal_date[5:7]|int }}"
+        href="/"
+        class="logo"
     >
-        Calendar
+        Memento
     </a>
 
-</nav>
-```
+    <nav>
+
+        <a href="/">
+            Today
+        </a>
+
+        <a
+            href="/calendar/{{ journal_date[:4] }}/{{ journal_date[5:7]|int }}"
+        >
+            Calendar
+        </a>
+
+    </nav>
 
 </header>
 
+
 <main class="day-page">
 
-```
-<section class="day-heading">
+    <section class="day-heading">
 
-    <p class="eyebrow">
-        MEMORY
-    </p>
+        <p class="eyebrow">
+            MEMORY
+        </p>
 
-
-    <h1>
-        {{ journal_date }}
-    </h1>
+        <h1>
+            {{ journal_date }}
+        </h1>
 
 
-    {% if keyword and keyword.final_keyword %}
+        {% if keyword and keyword.final_keyword %}
 
-        <div class="day-keyword">
-
-            {{ keyword.final_keyword }}
-
-        </div>
-
-    {% endif %}
-
-</section>
-
-
-<!-- ==========================================
-     Write today's memory
-=========================================== -->
-
-<section class="memory-composer">
-
-    <form
-        method="POST"
-        action="{{ url_for(
-            'day_view',
-            journal_date=journal_date
-        ) }}"
-    >
-
-        <label
-            for="memory-content"
-            class="composer-label"
-        >
-            WHAT DO YOU WANT TO REMEMBER?
-        </label>
-
-
-        <textarea
-            id="memory-content"
-            name="content"
-            placeholder="Write something you want to remember..."
-            required
-        ></textarea>
-
-
-        <div class="composer-footer">
-
-            <span>
-                Text memory
-            </span>
-
-
-            <button
-                type="submit"
-                class="save-memory-button"
+            <div
+                class="day-keyword"
+                id="keyword-display"
+                ondblclick="startKeywordEdit()"
+                title="Double-click to edit"
             >
-                Save memory
-            </button>
-
-        </div>
-
-    </form>
-
-</section>
+                {{ keyword.final_keyword }}
+            </div>
 
 
-<!-- ==========================================
-     Memories
-=========================================== -->
+            <form
+                id="keyword-form"
+                method="POST"
+                action="/day/{{ journal_date }}"
+            >
 
-<section class="memory-list">
+                <input
+                    type="hidden"
+                    name="action"
+                    value="keyword"
+                >
 
-    {% if memories %}
+                <input
+                    type="text"
+                    name="keyword"
+                    id="keyword-input"
+                    value="{{ keyword.final_keyword }}"
+                    autocomplete="off"
+                >
 
-        {% for memory in memories %}
+            </form>
 
-            <article class="memory-card">
+        {% endif %}
 
-                <div class="memory-type">
-
-                    {{ memory.memory_type }}
-
-                </div>
+    </section>
 
 
-                {% if memory.memory_type == "photo" %}
+    <section class="memory-list">
 
-                    {% if memory.file_path %}
+        {% if memories %}
 
-                        <img
-                            src="/{{ memory.file_path }}"
-                            alt="Memory photo"
-                            class="memory-photo"
+            {% for memory in memories %}
+
+                <article
+                    class="memory-card"
+                    {% if memory.memory_type == "text" %}
+                    ondblclick="startMemoryEdit({{ memory.id }})"
+                    title="Double-click to edit"
+                    {% endif %}
+                >
+
+                    <div class="memory-type">
+
+                        {{ memory.memory_type }}
+
+                    </div>
+
+
+                    {% if memory.memory_type == "photo" %}
+
+                        {% if memory.file_path %}
+
+                            <img
+                                src="/{{ memory.file_path }}"
+                                alt="Memory photo"
+                                class="memory-photo"
+                            >
+
+                        {% endif %}
+
+
+                    {% elif memory.memory_type == "music" %}
+
+                        <div class="memory-content">
+
+                            🎵
+
+                            <a
+                                href="{{ memory.content }}"
+                                target="_blank"
+                            >
+                                Open music
+                            </a>
+
+                        </div>
+
+
+                    {% elif memory.memory_type == "video" %}
+
+                        <div class="memory-content">
+
+                            ▶
+
+                            <a
+                                href="{{ memory.content }}"
+                                target="_blank"
+                            >
+                                Open video
+                            </a>
+
+                        </div>
+
+
+                    {% else %}
+
+                        <p
+                            class="memory-content"
+                            id="memory-display-{{ memory.id }}"
                         >
+                            {{ memory.content }}
+                        </p>
+
+
+                        <form
+                            class="memory-edit-form"
+                            id="memory-form-{{ memory.id }}"
+                            method="POST"
+                            action="/day/{{ journal_date }}"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="edit_memory"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="memory_id"
+                                value="{{ memory.id }}"
+                            >
+
+                            <textarea
+                                name="content"
+                                id="memory-input-{{ memory.id }}"
+                            >{{ memory.content }}</textarea>
+
+                        </form>
 
                     {% endif %}
 
 
-                {% elif memory.memory_type == "music" %}
+                    <div class="memory-date">
 
-                    <div class="memory-content">
-
-                        🎵
-
-                        <a
-                            href="{{ memory.content }}"
-                            target="_blank"
-                        >
-                            Open music
-                        </a>
+                        {{ memory.created_at }}
 
                     </div>
 
+                </article>
 
-                {% elif memory.memory_type == "video" %}
-
-                    <div class="memory-content">
-
-                        ▶
-
-                        <a
-                            href="{{ memory.content }}"
-                            target="_blank"
-                        >
-                            Open video
-                        </a>
-
-                    </div>
+            {% endfor %}
 
 
-                {% else %}
+        {% else %}
 
-                    <p class="memory-content">
+            <div class="empty-memory">
 
-                        {{ memory.content }}
+                <p>
+                    Nothing recorded yet.
+                </p>
 
-                    </p>
+                <span>
+                    This day is still waiting to be remembered.
+                </span>
 
-                {% endif %}
+            </div>
 
-
-                <div class="memory-date">
-
-                    {{ memory.created_at }}
-
-                </div>
-
-            </article>
-
-        {% endfor %}
+        {% endif %}
 
 
-    {% else %}
+        <form
+            id="new-memory-form"
+            class="new-memory-form"
+            method="POST"
+            action="/day/{{ journal_date }}"
+        >
 
-        <div class="empty-memory">
+            <input
+                type="hidden"
+                name="action"
+                value="memory"
+            >
 
-            <p>
-                Nothing recorded yet.
-            </p>
+            <textarea
+                id="new-memory-input"
+                name="content"
+                placeholder="Add a memory..."
+            ></textarea>
 
-            <span>
-                This day is still waiting to be remembered.
-            </span>
+        </form>
 
-        </div>
 
-    {% endif %}
+        <button
+            type="button"
+            id="add-memory-button"
+            class="add-memory-button"
+            onclick="startNewMemory()"
+        >
+            + Add memory
+        </button>
 
-</section>
-```
+    </section>
 
 </main>
 
+
 <footer class="site-footer">
 
-```
-<span>
-    Memento AI
-</span>
+    <span>
+        Memento AI
+    </span>
 
-<span>
-    Remember what matters.
-</span>
-```
+    <span>
+        Remember what matters.
+    </span>
 
 </footer>
+
+
+<script>
+
+let editingKeyword = false;
+let editingMemoryId = null;
+let addingMemory = false;
+
+let originalKeyword = "";
+let originalMemory = "";
+
+
+// ============================================================
+// Keyword editing
+// ============================================================
+
+function startKeywordEdit() {
+
+    if (editingKeyword) {
+        return;
+    }
+
+    const display =
+        document.getElementById(
+            "keyword-display"
+        );
+
+    const form =
+        document.getElementById(
+            "keyword-form"
+        );
+
+    const input =
+        document.getElementById(
+            "keyword-input"
+        );
+
+    if (!display || !form || !input) {
+        return;
+    }
+
+    editingKeyword = true;
+
+    originalKeyword =
+        input.value;
+
+    display.style.display = "none";
+
+    input.style.display = "block";
+
+    input.focus();
+
+    input.select();
+
+    setTimeout(function () {
+
+        document.addEventListener(
+            "click",
+            handleKeywordOutsideClick
+        );
+
+    }, 0);
+}
+
+
+function handleKeywordOutsideClick(event) {
+
+    const form =
+        document.getElementById(
+            "keyword-form"
+        );
+
+    if (!form) {
+        return;
+    }
+
+    if (
+        form.contains(event.target)
+    ) {
+        return;
+    }
+
+    finishKeywordEdit();
+}
+
+
+function finishKeywordEdit() {
+
+    if (!editingKeyword) {
+        return;
+    }
+
+    const display =
+        document.getElementById(
+            "keyword-display"
+        );
+
+    const form =
+        document.getElementById(
+            "keyword-form"
+        );
+
+    const input =
+        document.getElementById(
+            "keyword-input"
+        );
+
+    if (!display || !form || !input) {
+        return;
+    }
+
+    const newKeyword =
+        input.value.trim();
+
+    document.removeEventListener(
+        "click",
+        handleKeywordOutsideClick
+    );
+
+    editingKeyword = false;
+
+
+    if (!newKeyword) {
+
+        input.value =
+            originalKeyword;
+
+        input.style.display =
+            "none";
+
+        display.style.display =
+            "block";
+
+        return;
+    }
+
+
+    if (
+        newKeyword === originalKeyword
+    ) {
+
+        input.style.display =
+            "none";
+
+        display.style.display =
+            "block";
+
+        return;
+    }
+
+
+    form.submit();
+}
+
+
+// ============================================================
+// Memory editing
+// ============================================================
+
+function startMemoryEdit(memoryId) {
+
+    if (
+        editingMemoryId !== null ||
+        addingMemory
+    ) {
+        return;
+    }
+
+    const display =
+        document.getElementById(
+            "memory-display-" + memoryId
+        );
+
+    const form =
+        document.getElementById(
+            "memory-form-" + memoryId
+        );
+
+    const input =
+        document.getElementById(
+            "memory-input-" + memoryId
+        );
+
+    if (!display || !form || !input) {
+        return;
+    }
+
+    editingMemoryId =
+        memoryId;
+
+    originalMemory =
+        input.value;
+
+    display.style.display =
+        "none";
+
+    form.style.display =
+        "block";
+
+    input.focus();
+
+    input.setSelectionRange(
+        input.value.length,
+        input.value.length
+    );
+
+    setTimeout(function () {
+
+        document.addEventListener(
+            "click",
+            handleMemoryOutsideClick
+        );
+
+    }, 0);
+}
+
+
+function handleMemoryOutsideClick(event) {
+
+    const form =
+        document.getElementById(
+            "memory-form-" +
+            editingMemoryId
+        );
+
+    if (!form) {
+        return;
+    }
+
+    if (
+        form.contains(event.target)
+    ) {
+        return;
+    }
+
+    finishMemoryEdit();
+}
+
+
+function finishMemoryEdit() {
+
+    if (editingMemoryId === null) {
+        return;
+    }
+
+    const memoryId =
+        editingMemoryId;
+
+    const display =
+        document.getElementById(
+            "memory-display-" +
+            memoryId
+        );
+
+    const form =
+        document.getElementById(
+            "memory-form-" +
+            memoryId
+        );
+
+    const input =
+        document.getElementById(
+            "memory-input-" +
+            memoryId
+        );
+
+    if (!display || !form || !input) {
+        return;
+    }
+
+    const newContent =
+        input.value.trim();
+
+    document.removeEventListener(
+        "click",
+        handleMemoryOutsideClick
+    );
+
+    editingMemoryId = null;
+
+
+    if (!newContent) {
+
+        input.value =
+            originalMemory;
+
+        form.style.display =
+            "none";
+
+        display.style.display =
+            "block";
+
+        return;
+    }
+
+
+    if (
+        newContent === originalMemory
+    ) {
+
+        form.style.display =
+            "none";
+
+        display.style.display =
+            "block";
+
+        return;
+    }
+
+
+    form.submit();
+}
+
+
+// ============================================================
+// Add new memory
+// ============================================================
+
+function startNewMemory() {
+
+    if (
+        editingKeyword ||
+        editingMemoryId !== null ||
+        addingMemory
+    ) {
+        return;
+    }
+
+    const form =
+        document.getElementById(
+            "new-memory-form"
+        );
+
+    const input =
+        document.getElementById(
+            "new-memory-input"
+        );
+
+    const button =
+        document.getElementById(
+            "add-memory-button"
+        );
+
+    if (!form || !input || !button) {
+        return;
+    }
+
+    addingMemory = true;
+
+    button.style.display =
+        "none";
+
+    form.style.display =
+        "block";
+
+    input.focus();
+
+    setTimeout(function () {
+
+        document.addEventListener(
+            "click",
+            handleNewMemoryOutsideClick
+        );
+
+    }, 0);
+}
+
+
+function handleNewMemoryOutsideClick(event) {
+
+    const form =
+        document.getElementById(
+            "new-memory-form"
+        );
+
+    if (!form) {
+        return;
+    }
+
+    if (
+        form.contains(event.target)
+    ) {
+        return;
+    }
+
+    finishNewMemory();
+}
+
+
+function finishNewMemory() {
+
+    if (!addingMemory) {
+        return;
+    }
+
+    const form =
+        document.getElementById(
+            "new-memory-form"
+        );
+
+    const input =
+        document.getElementById(
+            "new-memory-input"
+        );
+
+    if (!form || !input) {
+        return;
+    }
+
+    const content =
+        input.value.trim();
+
+    document.removeEventListener(
+        "click",
+        handleNewMemoryOutsideClick
+    );
+
+    addingMemory = false;
+
+
+    if (!content) {
+
+        input.value = "";
+
+        form.style.display =
+            "none";
+
+        document.getElementById(
+            "add-memory-button"
+        ).style.display =
+            "block";
+
+        return;
+    }
+
+    form.submit();
+}
+
+</script>
+
 
 </body>
 
