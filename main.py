@@ -11,6 +11,11 @@ from app.memory.memory_service import (
     get_supported_memory_types,
 )
 
+from app.analysis.analysis_service import (
+    analyze_and_store_text_memory,
+    get_memory_analyses,
+)
+
 from app.media.media_service import (
     choose_photo_files,
     save_photo,
@@ -30,9 +35,6 @@ def print_header():
 def get_journal_date():
     """
     Ask the user for a journal date.
-
-    Returns:
-        A valid date string in YYYY-MM-DD format.
     """
 
     while True:
@@ -59,12 +61,112 @@ def get_journal_date():
 
 
 # ============================================================
+# Display AI analysis
+# ============================================================
+
+def display_ai_analysis(analyses):
+    """
+    Display stored AI analysis results.
+    """
+
+    if not analyses:
+
+        print(
+            "\nNo AI analysis results found."
+        )
+
+        return
+
+    print(
+        "\n===== AI ANALYSIS ====="
+    )
+
+    for analysis in analyses:
+
+        analysis_type = analysis.get(
+            "analysis_type"
+        )
+
+        result = analysis.get(
+            "result"
+        )
+
+        status = analysis.get(
+            "status"
+        )
+
+        print(
+            f"\n{analysis_type.capitalize()}:"
+        )
+
+        if status == "unknown":
+
+            print(
+                "Unable to determine reliably."
+            )
+
+            reason = analysis.get(
+                "reason"
+            )
+
+            if reason:
+
+                print(
+                    f"Reason: {reason}"
+                )
+
+        elif status == "failed":
+
+            print(
+                "Analysis failed."
+            )
+
+            reason = analysis.get(
+                "reason"
+            )
+
+            if reason:
+
+                print(
+                    f"Reason: {reason}"
+                )
+
+        else:
+
+            if isinstance(result, list):
+
+                for item in result:
+
+                    print(
+                        f"- {item}"
+                    )
+
+            elif isinstance(result, dict):
+
+                for key, value in result.items():
+
+                    print(
+                        f"{key}: {value}"
+                    )
+
+            else:
+
+                print(
+                    result
+                )
+
+    print(
+        "\n======================="
+    )
+
+
+# ============================================================
 # Add Text Memory
 # ============================================================
 
 def add_text_memory():
     """
-    Add a text memory.
+    Add a text memory and optionally analyze it with AI.
     """
 
     journal_date = get_journal_date()
@@ -100,6 +202,41 @@ def add_text_memory():
             f"Error: {error}"
         )
 
+        return
+
+    # --------------------------------------------------------
+    # Optional AI analysis
+    # --------------------------------------------------------
+
+    analyze_choice = input(
+        "\nAnalyze this memory with AI? (y/n): "
+    ).strip().lower()
+
+    if analyze_choice != "y":
+
+        return
+
+    try:
+
+        print(
+            "\nAnalyzing memory with AI..."
+        )
+
+        analyses = analyze_and_store_text_memory(
+            memory_id,
+            content,
+        )
+
+        display_ai_analysis(
+            analyses
+        )
+
+    except Exception as error:
+
+        print(
+            f"\nAI analysis failed: {error}"
+        )
+
 
 # ============================================================
 # Add Photo Memory
@@ -107,21 +244,11 @@ def add_text_memory():
 
 def add_photo_memory():
     """
-    Add a photo memory.
+    Add one or more photo memories.
 
-    The user uses one photo entry point.
-
-    Supported:
-
-        Regular Photo
-            JPG
-            JPEG
-            HEIC
-            HEIF
-            PNG
-
-        Live Photo
-            Image + MOV
+    The photo picker may return multiple files.
+    Each selected photo is stored as a separate
+    memory record.
     """
 
     journal_date = get_journal_date()
@@ -130,96 +257,52 @@ def add_photo_memory():
         "\nOpening photo picker..."
     )
 
-    selected_files = choose_photo_files()
+    file_paths = choose_photo_files()
 
-    # --------------------------------------------------------
-    # User cancelled
-    # --------------------------------------------------------
-
-    if not selected_files:
+    if not file_paths:
 
         print(
-            "No photo selected. "
+            "No photos selected. "
             "Photo memory cancelled."
         )
 
         return
 
-    # --------------------------------------------------------
-    # Save photo / Live Photo
-    # --------------------------------------------------------
-
     try:
 
-        media = save_photo(
-            selected_files,
+        saved_paths = save_photo(
+            file_paths,
             journal_date
         )
 
-        # ----------------------------------------------------
-        # Regular photo
-        # ----------------------------------------------------
+        if not isinstance(
+            saved_paths,
+            list
+        ):
 
-        if media["type"] == "regular_photo":
+            saved_paths = [
+                saved_paths
+            ]
 
-            memory_content = media["photo_path"]
+        print(
+            f"\n{len(saved_paths)} "
+            f"photo(s) saved successfully."
+        )
 
-            memory_id = create_memory(
-                journal_date,
-                "photo",
-                memory_content
-            )
-
-            print(
-                "\nPhoto memory saved successfully."
-            )
-
-            print(
-                f"Memory ID: {memory_id}"
-            )
-
-            print(
-                f"Photo: {media['photo_path']}"
-            )
-
-        # ----------------------------------------------------
-        # Live Photo
-        # ----------------------------------------------------
-
-        elif media["type"] == "live_photo":
-
-            # Store both files in one Photo Memory.
-            #
-            # Example:
-            #
-            # photo=data/media/2026-08-26/IMG_1234.HEIC;
-            # motion=data/media/2026-08-26/IMG_1234.MOV
-
-            memory_content = (
-                f"photo={media['photo_path']};"
-                f"motion={media['motion_path']}"
-            )
+        for stored_path in saved_paths:
 
             memory_id = create_memory(
                 journal_date,
                 "photo",
-                memory_content
+                stored_path
             )
 
             print(
-                "\nLive Photo memory saved successfully."
+                f"\nMemory ID: {memory_id}"
             )
 
             print(
-                f"Memory ID: {memory_id}"
-            )
-
-            print(
-                f"Photo: {media['photo_path']}"
-            )
-
-            print(
-                f"Motion: {media['motion_path']}"
+                f"Photo: {stored_path}"
             )
 
     except (
@@ -363,9 +446,145 @@ def view_journal():
             f"Content: {memory['content']}"
         )
 
+        if memory.get("file_path"):
+
+            print(
+                f"File: {memory['file_path']}"
+            )
+
+        if memory.get("platform"):
+
+            print(
+                f"Platform: {memory['platform']}"
+            )
+
+        # ----------------------------------------------------
+        # Show AI analysis
+        # ----------------------------------------------------
+
+        if memory["memory_type"] == "text":
+
+            try:
+
+                analyses = get_memory_analyses(
+                    memory["id"]
+                )
+
+                if analyses:
+
+                    print(
+                        "\nAI Analysis:"
+                    )
+
+                    for analysis in analyses:
+
+                        analysis_type = analysis.get(
+                            "analysis_type"
+                        )
+
+                        status = analysis.get(
+                            "status"
+                        )
+
+                        result = analysis.get(
+                            "result"
+                        )
+
+                        print(
+                            f"- {analysis_type}: ",
+                            end=""
+                        )
+
+                        if status == "unknown":
+
+                            print(
+                                "unknown"
+                            )
+
+                        elif isinstance(
+                            result,
+                            list
+                        ):
+
+                            print(
+                                ", ".join(
+                                    str(item)
+                                    for item in result
+                                )
+                            )
+
+                        else:
+
+                            print(
+                                result
+                            )
+
+            except Exception:
+
+                pass
+
     print(
         "\n------------------------------"
     )
+
+
+# ============================================================
+# View AI Analysis
+# ============================================================
+
+def view_ai_analysis():
+    """
+    Display AI analysis for a specific memory.
+    """
+
+    try:
+
+        memory_id = int(
+            input(
+                "\nEnter Memory ID: "
+            )
+        )
+
+    except ValueError:
+
+        print(
+            "Invalid Memory ID."
+        )
+
+        return
+
+    memory = get_single_memory(
+        memory_id
+    )
+
+    if not memory:
+
+        print(
+            "Memory not found."
+        )
+
+        return
+
+    try:
+
+        analyses = get_memory_analyses(
+            memory_id
+        )
+
+        print(
+            f"\n===== AI ANALYSIS "
+            f"FOR MEMORY {memory_id} ====="
+        )
+
+        display_ai_analysis(
+            analyses
+        )
+
+    except Exception as error:
+
+        print(
+            f"Could not load AI analysis: {error}"
+        )
 
 
 # ============================================================
@@ -593,20 +812,28 @@ def delete_existing_memory():
 
         return
 
-    success = remove_memory(
-        memory_id
-    )
+    try:
 
-    if success:
-
-        print(
-            "\nMemory deleted successfully."
+        success = remove_memory(
+            memory_id
         )
 
-    else:
+        if success:
+
+            print(
+                "\nMemory deleted successfully."
+            )
+
+        else:
+
+            print(
+                "\nMemory could not be deleted."
+            )
+
+    except ValueError as error:
 
         print(
-            "\nMemory could not be deleted."
+            f"Error: {error}"
         )
 
 
@@ -650,10 +877,11 @@ def main():
         print("3. Add Music")
         print("4. Add Video")
         print("5. View Journal")
-        print("6. Edit Memory")
-        print("7. Delete Memory")
-        print("8. Show Memory Types")
-        print("9. Exit")
+        print("6. View AI Analysis")
+        print("7. Edit Memory")
+        print("8. Delete Memory")
+        print("9. Show Memory Types")
+        print("10. Exit")
 
         try:
 
@@ -691,17 +919,21 @@ def main():
 
         elif choice == "6":
 
-            edit_existing_memory()
+            view_ai_analysis()
 
         elif choice == "7":
 
-            delete_existing_memory()
+            edit_existing_memory()
 
         elif choice == "8":
 
-            show_memory_types()
+            delete_existing_memory()
 
         elif choice == "9":
+
+            show_memory_types()
+
+        elif choice == "10":
 
             print(
                 "\nThank you for using Memento AI."
@@ -713,7 +945,7 @@ def main():
 
             print(
                 "\nInvalid option. "
-                "Please choose 1-9."
+                "Please choose 1-10."
             )
 
 
