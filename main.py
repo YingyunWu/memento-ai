@@ -1,435 +1,242 @@
-import sqlite3
 from datetime import datetime
-from pathlib import Path
-import shutil
-import tkinter as tk
-from tkinter import filedialog
+
+from app.database.database import initialize_database
+from app.memory.memory_service import (
+    create_memory,
+    get_journal_memories,
+    get_single_memory,
+    edit_memory,
+    remove_memory,
+    get_supported_memory_types,
+)
+from app.media.media_service import (
+    save_photo,
+    validate_music_url,
+    validate_video_url,
+)
 
 
-BASE_DIR = Path(__file__).resolve().parent
-MEDIA_DIR = BASE_DIR / "data" / "media"
+def print_header():
+    print("\n===== MEMENTO AI =====")
 
 
-def connect_database():
-    return sqlite3.connect(BASE_DIR / "memento.db")
+def get_journal_date():
+    """
+    Ask the user for a journal date.
+    """
+
+    while True:
+        journal_date = input(
+            "Enter journal date (YYYY-MM-DD): "
+        ).strip()
+
+        try:
+            datetime.strptime(
+                journal_date,
+                "%Y-%m-%d"
+            )
+
+            return journal_date
+
+        except ValueError:
+            print(
+                "Invalid date format. "
+                "Please use YYYY-MM-DD."
+            )
 
 
-def get_or_create_journal(connection, journal_date):
-    cursor = connection.cursor()
+def add_text_memory():
+    """
+    Add a text memory.
+    """
 
-    cursor.execute(
-        "SELECT id FROM journals WHERE journal_date = ?",
-        (journal_date,)
-    )
+    journal_date = get_journal_date()
 
-    result = cursor.fetchone()
+    content = input(
+        "What would you like to remember? "
+    ).strip()
 
-    if result:
-        return result[0]
-
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    cursor.execute(
-        """
-        INSERT INTO journals (journal_date, created_at, updated_at)
-        VALUES (?, ?, ?)
-        """,
-        (journal_date, current_time, current_time)
-    )
-
-    connection.commit()
-
-    return cursor.lastrowid
-
-
-def update_journal_time(connection, journal_id):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        UPDATE journals
-        SET updated_at = ?
-        WHERE id = ?
-        """,
-        (current_time, journal_id)
-    )
-
-
-def choose_memory_type():
-    print("\nChoose memory type:")
-    print("1. Text")
-    print("2. Photo")
-    print("3. Music")
-    print("4. Video")
-
-    choice = input("\nChoose an option: ")
-
-    memory_types = {
-        "1": "text",
-        "2": "photo",
-        "3": "music",
-        "4": "video"
-    }
-
-    return memory_types.get(choice)
-
-
-def choose_photo():
-    root = tk.Tk()
-    root.withdraw()
-
-    file_path = filedialog.askopenfilename(
-        title="Choose a photo",
-        filetypes=[
-            ("Image files", "*.jpg *.jpeg *.png *.gif *.webp"),
-            ("All files", "*.*")
-        ]
-    )
-
-    root.destroy()
-
-    return file_path
-
-
-def save_photo(file_path, journal_date):
-    source = Path(file_path)
-
-    if not source.exists():
-        print("\nPhoto file does not exist.")
-        return None
-
-    journal_media_dir = MEDIA_DIR / journal_date
-    journal_media_dir.mkdir(parents=True, exist_ok=True)
-
-    destination = journal_media_dir / source.name
-
-    # Avoid overwriting an existing photo
-    if destination.exists():
-        timestamp = datetime.now().strftime("%H%M%S")
-        destination = (
-            journal_media_dir
-            / f"{source.stem}_{timestamp}{source.suffix}"
-        )
-
-    shutil.copy2(source, destination)
-
-    return str(destination.relative_to(BASE_DIR))
-
-
-def add_memory():
-    journal_date = input("Enter journal date (YYYY-MM-DD): ")
-
-    memory_type = choose_memory_type()
-
-    if memory_type is None:
-        print("\nInvalid memory type.")
+    if not content:
+        print("Memory cannot be empty.")
         return
-
-    if memory_type == "text":
-
-        content = input("\nWhat would you like to write? ")
-
-    elif memory_type == "photo":
-
-        print("\nPlease choose a photo from your computer.")
-
-        file_path = choose_photo()
-
-        if not file_path:
-            print("\nPhoto selection cancelled.")
-            return
-
-        content = save_photo(file_path, journal_date)
-
-        if content is None:
-            return
-
-    elif memory_type == "music":
-
-        content = input("\nEnter music URL: ")
-
-    elif memory_type == "video":
-
-        content = input("\nEnter video URL: ")
-
-    connection = connect_database()
-
-    journal_id = get_or_create_journal(
-        connection,
-        journal_date
-    )
-
-    current_time = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        INSERT INTO memories
-        (journal_id, memory_type, content, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            journal_id,
-            memory_type,
-            content,
-            current_time,
-            current_time
-        )
-    )
-
-    update_journal_time(
-        connection,
-        journal_id
-    )
-
-    connection.commit()
-    connection.close()
-
-    print("\nMemory saved successfully.")
-
-    if memory_type == "photo":
-        print(f"Photo saved to: {content}")
-
-
-def view_journal():
-    journal_date = input("Enter journal date (YYYY-MM-DD): ")
-
-    connection = connect_database()
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT id, memory_type, content, created_at, updated_at
-        FROM memories
-        WHERE journal_id = (
-            SELECT id
-            FROM journals
-            WHERE journal_date = ?
-        )
-        ORDER BY created_at
-        """,
-        (journal_date,)
-    )
-
-    memories = cursor.fetchall()
-
-    connection.close()
-
-    if not memories:
-        print("\nNo memories found for this date.")
-        return
-
-    print(f"\n===== JOURNAL: {journal_date} =====")
-
-    for memory in memories:
-
-        memory_id, memory_type, content, created_at, updated_at = memory
-
-        print(f"\nMemory ID: {memory_id}")
-        print(f"Type: {memory_type}")
-        print(f"Created: {created_at}")
-        print(f"Updated: {updated_at}")
-        print(f"Content: {content}")
-
-
-def edit_memory():
-
-    journal_date = input("Enter journal date (YYYY-MM-DD): ")
-
-    connection = connect_database()
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT id, memory_type, content, created_at, updated_at
-        FROM memories
-        WHERE journal_id = (
-            SELECT id
-            FROM journals
-            WHERE journal_date = ?
-        )
-        ORDER BY created_at
-        """,
-        (journal_date,)
-    )
-
-    memories = cursor.fetchall()
-
-    if not memories:
-
-        print("\nNo memories found for this date.")
-
-        connection.close()
-
-        return
-
-    print(
-        f"\n===== MEMORIES ON {journal_date} ====="
-    )
-
-    for memory in memories:
-
-        memory_id, memory_type, content, created_at, updated_at = memory
-
-        print(f"\nMemory ID: {memory_id}")
-        print(f"Type: {memory_type}")
-        print(f"Content: {content}")
-        print(f"Created: {created_at}")
-        print(f"Updated: {updated_at}")
 
     try:
-
-        memory_id = int(
-            input(
-                "\nEnter the Memory ID you want to edit: "
-            )
+        memory_id = create_memory(
+            journal_date,
+            "text",
+            content
         )
 
-    except ValueError:
+        print(
+            f"\nText memory saved successfully. "
+            f"Memory ID: {memory_id}"
+        )
 
-        print("\nInvalid Memory ID.")
+    except ValueError as error:
+        print(f"Error: {error}")
 
-        connection.close()
 
-        return
+def add_photo_memory():
+    """
+    Add a photo memory.
+    """
 
-    cursor.execute(
-        """
-        SELECT content, memory_type, journal_id
-        FROM memories
-        WHERE id = ?
-        """,
-        (memory_id,)
-    )
+    journal_date = get_journal_date()
 
-    memory = cursor.fetchone()
+    photo_path = input(
+        "Enter the path to the photo: "
+    ).strip()
 
-    if not memory:
-
-        print("\nMemory not found.")
-
-        connection.close()
-
-        return
-
-    old_content, memory_type, journal_id = memory
-
-    print("\nCurrent content:")
-    print(old_content)
-
-    if memory_type == "photo":
-
-        print("\nChoose a replacement photo.")
-
-        file_path = choose_photo()
-
-        if not file_path:
-
-            print("\nPhoto selection cancelled.")
-
-            connection.close()
-
-            return
-
-        new_content = save_photo(
-            file_path,
+    try:
+        stored_path = save_photo(
+            photo_path,
             journal_date
         )
 
-        if new_content is None:
-
-            connection.close()
-
-            return
-
-    elif memory_type == "text":
-
-        new_content = input(
-            "\nEnter new content: "
+        memory_id = create_memory(
+            journal_date,
+            "photo",
+            stored_path
         )
 
-    elif memory_type == "music":
-
-        new_content = input(
-            "\nEnter new music URL: "
+        print(
+            "\nPhoto memory saved successfully."
         )
 
-    elif memory_type == "video":
-
-        new_content = input(
-            "\nEnter new video URL: "
+        print(
+            f"Memory ID: {memory_id}"
         )
 
-    else:
+        print(
+            f"Stored at: {stored_path}"
+        )
 
-        print("\nUnsupported memory type.")
+    except (FileNotFoundError, ValueError) as error:
+        print(f"Error: {error}")
 
-        connection.close()
 
-        return
+def add_music_memory():
+    """
+    Add a music URL memory.
+    """
 
-    current_time = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
+    journal_date = get_journal_date()
+
+    music_url = input(
+        "Enter the music URL: "
+    ).strip()
+
+    try:
+        music_url = validate_music_url(
+            music_url
+        )
+
+        memory_id = create_memory(
+            journal_date,
+            "music",
+            music_url
+        )
+
+        print(
+            f"\nMusic memory saved successfully. "
+            f"Memory ID: {memory_id}"
+        )
+
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def add_video_memory():
+    """
+    Add a video URL memory.
+    """
+
+    journal_date = get_journal_date()
+
+    video_url = input(
+        "Enter the video URL: "
+    ).strip()
+
+    try:
+        video_url = validate_video_url(
+            video_url
+        )
+
+        memory_id = create_memory(
+            journal_date,
+            "video",
+            video_url
+        )
+
+        print(
+            f"\nVideo memory saved successfully. "
+            f"Memory ID: {memory_id}"
+        )
+
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def view_journal():
+    """
+    Display all memories for a specific date.
+    """
+
+    journal_date = get_journal_date()
+
+    memories = get_journal_memories(
+        journal_date
     )
 
-    cursor.execute(
-        """
-        UPDATE memories
-        SET content = ?, updated_at = ?
-        WHERE id = ?
-        """,
-        (
-            new_content,
-            current_time,
-            memory_id
-        )
+    print(
+        f"\n===== JOURNAL: {journal_date} ====="
     )
-
-    update_journal_time(
-        connection,
-        journal_id
-    )
-
-    connection.commit()
-    connection.close()
-
-    print("\nMemory updated successfully.")
-
-
-def delete_memory():
-
-    journal_date = input("Enter journal date (YYYY-MM-DD): ")
-
-    connection = connect_database()
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT id, memory_type, content, created_at
-        FROM memories
-        WHERE journal_id = (
-            SELECT id
-            FROM journals
-            WHERE journal_date = ?
-        )
-        ORDER BY created_at
-        """,
-        (journal_date,)
-    )
-
-    memories = cursor.fetchall()
 
     if not memories:
+        print("No memories found for this date.")
+        return
 
-        print("\nNo memories found for this date.")
+    for memory in memories:
+        print("\n------------------------------")
 
-        connection.close()
+        print(
+            f"Memory ID: {memory['id']}"
+        )
 
+        print(
+            f"Type: {memory['memory_type']}"
+        )
+
+        print(
+            f"Created: {memory['created_at']}"
+        )
+
+        print(
+            f"Updated: {memory['updated_at']}"
+        )
+
+        print(
+            f"Content: {memory['content']}"
+        )
+
+    print("\n------------------------------")
+
+
+def edit_existing_memory():
+    """
+    Edit an existing memory.
+    """
+
+    journal_date = get_journal_date()
+
+    memories = get_journal_memories(
+        journal_date
+    )
+
+    if not memories:
+        print(
+            "No memories found for this date."
+        )
         return
 
     print(
@@ -437,129 +244,250 @@ def delete_memory():
     )
 
     for memory in memories:
+        print(
+            f"\nMemory ID: {memory['id']}"
+        )
 
-        memory_id, memory_type, content, created_at = memory
+        print(
+            f"Type: {memory['memory_type']}"
+        )
 
-        print(f"\nMemory ID: {memory_id}")
-        print(f"Type: {memory_type}")
-        print(f"Content: {content}")
-        print(f"Created: {created_at}")
+        print(
+            f"Content: {memory['content']}"
+        )
+
+        print(
+            f"Created: {memory['created_at']}"
+        )
+
+        print(
+            f"Updated: {memory['updated_at']}"
+        )
 
     try:
-
         memory_id = int(
             input(
-                "\nEnter the Memory ID you want to delete: "
+                "\nEnter the Memory ID "
+                "you want to edit: "
             )
         )
 
     except ValueError:
-
-        print("\nInvalid Memory ID.")
-
-        connection.close()
-
+        print("Invalid Memory ID.")
         return
 
-    cursor.execute(
-        """
-        SELECT journal_id, content
-        FROM memories
-        WHERE id = ?
-        """,
-        (memory_id,)
+    memory = get_single_memory(
+        memory_id
     )
-
-    memory = cursor.fetchone()
 
     if not memory:
-
-        print("\nMemory not found.")
-
-        connection.close()
-
+        print("Memory not found.")
         return
 
-    journal_id, content = memory
+    if memory["journal_date"] != journal_date:
+        print(
+            "This memory does not belong "
+            "to the selected journal."
+        )
+        return
 
-    print("\nMemory to delete:")
-    print(content)
+    print("\nCurrent content:")
+    print(memory["content"])
+
+    new_content = input(
+        "\nEnter new content: "
+    ).strip()
+
+    if not new_content:
+        print(
+            "Content cannot be empty."
+        )
+        return
+
+    try:
+        success = edit_memory(
+            memory_id,
+            new_content
+        )
+
+        if success:
+            print(
+                "\nMemory updated successfully."
+            )
+        else:
+            print(
+                "\nMemory could not be updated."
+            )
+
+    except ValueError as error:
+        print(f"Error: {error}")
+
+
+def delete_existing_memory():
+    """
+    Delete an existing memory.
+    """
+
+    journal_date = get_journal_date()
+
+    memories = get_journal_memories(
+        journal_date
+    )
+
+    if not memories:
+        print(
+            "No memories found for this date."
+        )
+        return
+
+    print(
+        f"\n===== MEMORIES ON {journal_date} ====="
+    )
+
+    for memory in memories:
+        print(
+            f"\nMemory ID: {memory['id']}"
+        )
+
+        print(
+            f"Type: {memory['memory_type']}"
+        )
+
+        print(
+            f"Content: {memory['content']}"
+        )
+
+    try:
+        memory_id = int(
+            input(
+                "\nEnter the Memory ID "
+                "you want to delete: "
+            )
+        )
+
+    except ValueError:
+        print("Invalid Memory ID.")
+        return
+
+    memory = get_single_memory(
+        memory_id
+    )
+
+    if not memory:
+        print("Memory not found.")
+        return
+
+    if memory["journal_date"] != journal_date:
+        print(
+            "This memory does not belong "
+            "to the selected journal."
+        )
+        return
 
     confirmation = input(
-        "\nAre you sure you want to delete this memory? (y/n): "
-    ).lower()
+        "\nAre you sure you want to delete "
+        "this memory? (y/n): "
+    ).strip().lower()
 
     if confirmation != "y":
-
-        print("\nDeletion cancelled.")
-
-        connection.close()
-
+        print("Deletion cancelled.")
         return
 
-    cursor.execute(
-        """
-        DELETE FROM memories
-        WHERE id = ?
-        """,
-        (memory_id,)
+    success = remove_memory(
+        memory_id
     )
 
-    update_journal_time(
-        connection,
-        journal_id
-    )
+    if success:
+        print(
+            "\nMemory deleted successfully."
+        )
+    else:
+        print(
+            "\nMemory could not be deleted."
+        )
 
-    connection.commit()
-    connection.close()
 
-    print("\nMemory deleted successfully.")
+def show_memory_types():
+    """
+    Display supported memory types.
+    """
+
+    print("\nSupported memory types:")
+
+    for memory_type in get_supported_memory_types():
+        print(
+            f"- {memory_type.capitalize()}"
+        )
 
 
 def main():
+    """
+    Main application loop.
+    """
+
+    initialize_database()
 
     while True:
 
-        print("\n===== MEMENTO AI =====")
-        print("1. Add a memory")
-        print("2. View a journal")
-        print("3. Edit a memory")
-        print("4. Delete a memory")
-        print("5. Exit")
+        print_header()
 
-        choice = input(
-            "\nChoose an option: "
-        )
+        print("1. Add Text")
+        print("2. Add Photo")
+        print("3. Add Music")
+        print("4. Add Video")
+        print("5. View Journal")
+        print("6. Edit Memory")
+        print("7. Delete Memory")
+        print("8. Show Memory Types")
+        print("9. Exit")
+
+        try:
+            choice = input(
+                "\nChoose an option: "
+            ).strip()
+
+        except KeyboardInterrupt:
+            print(
+                "\n\nMemento AI closed."
+            )
+            break
 
         if choice == "1":
-
-            add_memory()
+            add_text_memory()
 
         elif choice == "2":
-
-            view_journal()
+            add_photo_memory()
 
         elif choice == "3":
-
-            edit_memory()
+            add_music_memory()
 
         elif choice == "4":
-
-            delete_memory()
+            add_video_memory()
 
         elif choice == "5":
+            view_journal()
 
-            print("\nGoodbye!")
+        elif choice == "6":
+            edit_existing_memory()
 
+        elif choice == "7":
+            delete_existing_memory()
+
+        elif choice == "8":
+            show_memory_types()
+
+        elif choice == "9":
+            print(
+                "\nThank you for using Memento AI."
+            )
             break
 
         else:
-
             print(
-                "\nInvalid choice. Please try again."
+                "\nInvalid option. "
+                "Please choose 1-9."
             )
 
 
 if __name__ == "__main__":
-
     main()
