@@ -1,3 +1,6 @@
+from pathlib import Path
+from uuid import uuid4
+
 from flask import (
     Flask,
     render_template,
@@ -5,6 +8,9 @@ from flask import (
     redirect,
     url_for,
 )
+
+from werkzeug.utils import secure_filename
+
 
 from app.keyword.keyword_service import (
     get_monthly_keywords,
@@ -19,11 +25,39 @@ from app.memory.memory_service import (
 )
 
 
+# ============================================================
+# Flask
+# ============================================================
+
 app = Flask(
     __name__,
     template_folder="app/web/templates",
     static_folder="app/web/static",
 )
+
+
+# ============================================================
+# Upload configuration
+# ============================================================
+
+UPLOAD_FOLDER = (
+    Path(app.static_folder)
+    / "uploads"
+)
+
+UPLOAD_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+
+ALLOWED_IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+}
 
 
 # ============================================================
@@ -86,8 +120,9 @@ def day_view(
             "",
         )
 
+
         # ====================================================
-        # Add new memory
+        # Add text memory
         # ====================================================
 
         if action == "memory":
@@ -106,14 +141,109 @@ def day_view(
                     source_type="text",
                 )
 
-                # create_memory() already handles
-                # automatic AI keyword updating.
-                #
-                # If the current keyword belongs to AI,
-                # it will be regenerated.
-                #
-                # If the current keyword belongs to the user,
-                # it will remain unchanged.
+
+        # ====================================================
+        # Upload photo
+        # ====================================================
+
+        elif action == "photo":
+
+            photo = request.files.get(
+                "photo"
+            )
+
+            if photo and photo.filename:
+
+                original_filename = secure_filename(
+                    photo.filename
+                )
+
+                extension = Path(
+                    original_filename
+                ).suffix.lower()
+
+
+                # --------------------------------------------
+                # Validate extension
+                # --------------------------------------------
+
+                if extension not in ALLOWED_IMAGE_EXTENSIONS:
+
+                    print(
+                        "Unsupported image type: "
+                        f"{extension}"
+                    )
+
+                    return redirect(
+                        url_for(
+                            "day_view",
+                            journal_date=journal_date,
+                        )
+                    )
+
+
+                # --------------------------------------------
+                # Generate unique filename
+                # --------------------------------------------
+
+                unique_filename = (
+                    f"{uuid4().hex}"
+                    f"{extension}"
+                )
+
+
+                # --------------------------------------------
+                # Save file
+                # --------------------------------------------
+
+                file_path = (
+                    UPLOAD_FOLDER
+                    / unique_filename
+                )
+
+                photo.save(
+                    file_path
+                )
+
+
+                # --------------------------------------------
+                # Database path
+                # --------------------------------------------
+
+                relative_path = (
+                    f"static/uploads/"
+                    f"{unique_filename}"
+                )
+
+
+                # --------------------------------------------
+                # Create photo memory
+                # --------------------------------------------
+
+                try:
+
+                    create_memory(
+                        journal_date=journal_date,
+                        memory_type="photo",
+                        content="",
+                        source_type="upload",
+                        file_path=relative_path,
+                    )
+
+                except Exception as error:
+
+                    print(
+                        "Photo memory creation failed: "
+                        f"{error}"
+                    )
+
+                    # Remove uploaded file if database
+                    # insertion fails.
+
+                    if file_path.exists():
+
+                        file_path.unlink()
+
 
         # ====================================================
         # Edit existing memory
@@ -138,8 +268,6 @@ def day_view(
                     new_content=content,
                 )
 
-                # edit_memory() already handles
-                # automatic AI keyword updating.
 
         # ====================================================
         # User edits keyword
@@ -160,8 +288,9 @@ def day_view(
                     source="user",
                 )
 
+
         # ====================================================
-        # User explicitly requests AI keyword update
+        # Explicit AI keyword regeneration
         # ====================================================
 
         elif action == "ai_keyword":
@@ -179,9 +308,10 @@ def day_view(
                     f"{error}"
                 )
 
+
         # ====================================================
         # Redirect after POST
-        # ====================================================
+        # ========================================================
 
         return redirect(
             url_for(
@@ -189,6 +319,7 @@ def day_view(
                 journal_date=journal_date,
             )
         )
+
 
     # ========================================================
     # GET
@@ -198,12 +329,15 @@ def day_view(
         journal_date
     )
 
+
     keyword_data = None
+
 
     monthly_keywords = get_monthly_keywords(
         int(journal_date[:4]),
         int(journal_date[5:7]),
     )
+
 
     for item in monthly_keywords:
 
@@ -212,6 +346,7 @@ def day_view(
             keyword_data = item
 
             break
+
 
     return render_template(
         "day.html",
@@ -228,6 +363,5 @@ def day_view(
 if __name__ == "__main__":
 
     app.run(
-        debug=True,
-        port=5000,
+        debug=True
     )
