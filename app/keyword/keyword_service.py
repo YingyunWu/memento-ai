@@ -55,14 +55,15 @@ def validate_user_keyword(keyword):
 
 def validate_ai_candidates(candidates):
     """
-    Validate AI-generated keyword candidates.
+    Validate and clean AI-generated keyword candidates.
 
     Rules:
         - Must be a list.
         - Maximum 3 candidates.
-        - Each candidate must contain 1-7 characters.
         - Empty candidates are rejected.
+        - Candidates longer than 7 characters are skipped.
         - Duplicate candidates are removed.
+        - At least one valid candidate must remain.
     """
 
     if not isinstance(candidates, list):
@@ -75,36 +76,48 @@ def validate_ai_candidates(candidates):
             "AI candidates cannot be empty."
         )
 
-    if len(candidates) > MAX_AI_CANDIDATES:
-        raise ValueError(
-            f"AI may provide at most "
-            f"{MAX_AI_CANDIDATES} candidates."
-        )
-
     cleaned = []
 
     for candidate in candidates:
 
         if not isinstance(candidate, str):
-            raise ValueError(
-                "Each AI candidate must be a string."
-            )
+            continue
 
         candidate = candidate.strip()
 
         if not candidate:
-            raise ValueError(
-                "AI keyword cannot be empty."
-            )
+            continue
+
+        # ----------------------------------------------------
+        # Skip candidates that exceed the length limit.
+        # Do not fail the entire AI generation.
+        # ----------------------------------------------------
 
         if len(candidate) > MAX_AI_KEYWORD_LENGTH:
-            raise ValueError(
-                "AI-generated keywords must be "
-                "no more than 7 characters."
-            )
+            continue
+
+        # ----------------------------------------------------
+        # Remove duplicates
+        # ----------------------------------------------------
 
         if candidate not in cleaned:
             cleaned.append(candidate)
+
+        # ----------------------------------------------------
+        # Maximum three valid candidates
+        # ----------------------------------------------------
+
+        if len(cleaned) >= MAX_AI_CANDIDATES:
+            break
+
+    # --------------------------------------------------------
+    # At least one valid candidate is required
+    # --------------------------------------------------------
+
+    if not cleaned:
+        raise ValueError(
+            "AI could not generate a valid keyword."
+        )
 
     return cleaned
 
@@ -618,3 +631,32 @@ def get_monthly_keywords(
         dict(row)
         for row in rows
     ]
+
+# ============================================================
+# Force regenerate daily AI keyword
+# ============================================================
+
+def regenerate_daily_keyword(
+    journal_date,
+):
+    """
+    Force regeneration of the daily AI keyword.
+
+    This function is used when the user explicitly
+    asks Memento AI to regenerate the keyword.
+
+    Unlike the automatic refresh logic:
+
+        - It ignores the current keyword_source.
+        - It always asks AI to regenerate the keyword.
+        - The resulting keyword becomes AI-owned.
+
+    Returns:
+        A list of validated AI keyword candidates.
+    """
+
+    candidates = generate_daily_keyword_candidates(
+        journal_date
+    )
+
+    return candidates

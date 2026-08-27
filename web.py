@@ -8,9 +8,8 @@ from flask import (
 
 from app.keyword.keyword_service import (
     get_monthly_keywords,
-    get_daily_keyword,
-    generate_daily_keyword_candidates,
     set_final_keyword,
+    regenerate_daily_keyword,
 )
 
 from app.memory.memory_service import (
@@ -65,7 +64,7 @@ def calendar_view(
 
 
 # ============================================================
-# Daily journal
+# Day
 # ============================================================
 
 @app.route(
@@ -110,7 +109,11 @@ def day_view(
                 # create_memory() already handles
                 # automatic AI keyword updating.
                 #
-                # No additional AI call is needed here.
+                # If the current keyword belongs to AI,
+                # it will be regenerated.
+                #
+                # If the current keyword belongs to the user,
+                # it will remain unchanged.
 
         # ====================================================
         # Edit existing memory
@@ -165,7 +168,7 @@ def day_view(
 
             try:
 
-                generate_daily_keyword_candidates(
+                regenerate_daily_keyword(
                     journal_date
                 )
 
@@ -195,9 +198,20 @@ def day_view(
         journal_date
     )
 
-    keyword_data = get_daily_keyword(
-        journal_date
+    keyword_data = None
+
+    monthly_keywords = get_monthly_keywords(
+        int(journal_date[:4]),
+        int(journal_date[5:7]),
     )
+
+    for item in monthly_keywords:
+
+        if item["journal_date"] == journal_date:
+
+            keyword_data = item
+
+            break
 
     return render_template(
         "day.html",
@@ -208,7 +222,7 @@ def day_view(
 
 
 # ============================================================
-# Run application
+# Run
 # ============================================================
 
 if __name__ == "__main__":
