@@ -1064,3 +1064,49 @@ nav a:hover {
 .add-memory-button:hover {
     opacity: 1;
 }
+/* ============================================================
+   AI Keyword Action
+   ============================================================ */
+
+.keyword-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-keyword-button {
+    border: none;
+    background: transparent;
+    padding: 4px 6px;
+
+    font-size: 15px;
+    line-height: 1;
+
+    color: inherit;
+    opacity: 0.35;
+
+    cursor: pointer;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.ai-keyword-button:hover {
+    opacity: 0.8;
+    transform: rotate(12deg);
+}
+
+.ai-keyword-button:focus {
+    outline: none;
+}
+
+.ai-keyword-button:active {
+    transform: rotate(12deg) scale(0.9);
+}
+
+.ai-keyword-button:disabled {
+    cursor: default;
+    opacity: 0.3;
+}
+

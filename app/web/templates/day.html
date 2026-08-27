@@ -65,13 +65,29 @@
 
         {% if keyword and keyword.final_keyword %}
 
-            <div
-                class="day-keyword"
-                id="keyword-display"
-                ondblclick="startKeywordEdit()"
-                title="Double-click to edit"
-            >
-                {{ keyword.final_keyword }}
+            <div class="keyword-row">
+
+                <div
+                    class="day-keyword"
+                    id="keyword-display"
+                    ondblclick="startKeywordEdit()"
+                    title="Double-click to edit"
+                >
+                    {{ keyword.final_keyword }}
+                </div>
+
+
+                <button
+                    type="button"
+                    class="ai-keyword-button"
+                    id="ai-keyword-button"
+                    onclick="regenerateAIKeyword()"
+                    title="Regenerate with AI"
+                    aria-label="Regenerate keyword with AI"
+                >
+                    ✦
+                </button>
+
             </div>
 
 
@@ -93,6 +109,21 @@
                     id="keyword-input"
                     value="{{ keyword.final_keyword }}"
                     autocomplete="off"
+                >
+
+            </form>
+
+
+            <form
+                id="ai-keyword-form"
+                method="POST"
+                action="/day/{{ journal_date }}"
+            >
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="ai_keyword"
                 >
 
             </form>
@@ -145,6 +176,7 @@
                             <a
                                 href="{{ memory.content }}"
                                 target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 Open music
                             </a>
@@ -161,6 +193,7 @@
                             <a
                                 href="{{ memory.content }}"
                                 target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 Open video
                             </a>
@@ -295,6 +328,42 @@ let originalMemory = "";
 
 
 // ============================================================
+// AI keyword regeneration
+// ============================================================
+
+function regenerateAIKeyword() {
+
+    if (
+        editingKeyword ||
+        editingMemoryId !== null ||
+        addingMemory
+    ) {
+        return;
+    }
+
+    const form =
+        document.getElementById(
+            "ai-keyword-form"
+        );
+
+    const button =
+        document.getElementById(
+            "ai-keyword-button"
+        );
+
+    if (!form || !button) {
+        return;
+    }
+
+    button.disabled = true;
+
+    button.textContent = "…";
+
+    form.submit();
+}
+
+
+// ============================================================
 // Keyword editing
 // ============================================================
 
@@ -328,9 +397,11 @@ function startKeywordEdit() {
     originalKeyword =
         input.value;
 
-    display.style.display = "none";
+    display.style.display =
+        "none";
 
-    input.style.display = "block";
+    input.style.display =
+        "block";
 
     input.focus();
 
@@ -452,17 +523,20 @@ function startMemoryEdit(memoryId) {
 
     const display =
         document.getElementById(
-            "memory-display-" + memoryId
+            "memory-display-" +
+            memoryId
         );
 
     const form =
         document.getElementById(
-            "memory-form-" + memoryId
+            "memory-form-" +
+            memoryId
         );
 
     const input =
         document.getElementById(
-            "memory-input-" + memoryId
+            "memory-input-" +
+            memoryId
         );
 
     if (!display || !form || !input) {
@@ -687,7 +761,12 @@ function finishNewMemory() {
             "new-memory-input"
         );
 
-    if (!form || !input) {
+    const button =
+        document.getElementById(
+            "add-memory-button"
+        );
+
+    if (!form || !input || !button) {
         return;
     }
 
@@ -709,9 +788,7 @@ function finishNewMemory() {
         form.style.display =
             "none";
 
-        document.getElementById(
-            "add-memory-button"
-        ).style.display =
+        button.style.display =
             "block";
 
         return;
