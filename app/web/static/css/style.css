@@ -16,22 +16,25 @@
 html {
     margin: 0;
     padding: 0;
-    background: #f5f2ed;
+
+    background: #f7f6f2;
 }
 
 body {
     margin: 0;
     padding: 0;
 
+    min-height: 100vh;
+
     background:
         radial-gradient(
             circle at 15% 10%,
-            rgba(255, 255, 255, 0.7),
+            rgba(255, 255, 255, 0.72),
             transparent 30%
         ),
-        #f5f2ed;
+        #f7f6f2;
 
-    color: #383734;
+    color: #3f423f;
 
     font-family:
         -apple-system,
@@ -44,9 +47,8 @@ body {
 
     line-height: 1.6;
 
-    min-height: 100vh;
-
     -webkit-font-smoothing: antialiased;
+
     text-rendering: optimizeLegibility;
 }
 
@@ -66,8 +68,7 @@ textarea {
     width: 100%;
 
     padding:
-        28px
-        42px;
+        28px 42px;
 
     display: flex;
 
@@ -78,7 +79,7 @@ textarea {
 
 
 .logo {
-    color: #383734;
+    color: #3f423f;
 
     text-decoration: none;
 
@@ -89,7 +90,9 @@ textarea {
 
     font-size: 20px;
 
-    letter-spacing: 0.04em;
+    line-height: 1;
+
+    letter-spacing: 0.02em;
 
     transition:
         opacity 0.2s ease;
@@ -111,11 +114,13 @@ textarea {
 
 
 .nav-link {
-    color: #77736d;
+    color: #9a9b96;
 
     text-decoration: none;
 
-    font-size: 12px;
+    font-size: 11px;
+
+    line-height: 1;
 
     letter-spacing: 0.08em;
 
@@ -127,7 +132,7 @@ textarea {
 
 
 .nav-link:hover {
-    color: #383734;
+    color: #3f423f;
 }
 
 
@@ -137,7 +142,7 @@ textarea {
 
 .day-page {
     width: min(
-        100% - 48px,
+        calc(100% - 48px),
         1080px
     );
 
@@ -145,9 +150,7 @@ textarea {
         0 auto;
 
     padding:
-        30px
-        0
-        100px;
+        30px 0 100px;
 }
 
 
@@ -159,9 +162,7 @@ textarea {
     position: relative;
 
     padding:
-        40px
-        0
-        70px;
+        40px 0 70px;
 
     text-align: center;
 }
@@ -174,13 +175,15 @@ textarea {
 
     top: 45px;
 
-    color: #8a867f;
+    color: #9a9b96;
 
     text-decoration: none;
 
-    font-size: 11px;
+    font-size: 10px;
 
-    letter-spacing: 0.08em;
+    line-height: 1;
+
+    letter-spacing: 0.1em;
 
     text-transform: uppercase;
 
@@ -190,14 +193,14 @@ textarea {
 
 
 .back-link:hover {
-    color: #383734;
+    color: #3f423f;
 }
 
 
 .day-title {
     margin: 0;
 
-    color: #4a4844;
+    color: #3f423f;
 
     font-family:
         Georgia,
@@ -206,16 +209,16 @@ textarea {
 
     font-size:
         clamp(
-            34px,
-            5vw,
-            54px
+            42px,
+            6vw,
+            70px
         );
 
     font-weight: 400;
 
-    letter-spacing: -0.025em;
+    line-height: 1;
 
-    line-height: 1.1;
+    letter-spacing: -0.055em;
 }
 
 
@@ -240,23 +243,29 @@ textarea {
     display: inline-block;
 
     padding:
-        5px
-        14px;
+        5px 14px;
 
     border:
         1px solid
-        rgba(125, 119, 109, 0.25);
+        rgba(120, 122, 116, 0.25);
 
     border-radius: 999px;
 
-    color: #7b766e;
+    color: #3f423f;
 
     background:
-        rgba(255, 255, 255, 0.28);
+        rgba(255, 255, 255, 0.3);
 
-    font-size: 11px;
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
 
-    letter-spacing: 0.08em;
+    font-size: 13px;
+
+    line-height: 1.35;
+
+    letter-spacing: -0.015em;
 
     cursor: pointer;
 
@@ -268,10 +277,10 @@ textarea {
 
 .day-keyword:hover {
     background:
-        rgba(255, 255, 255, 0.55);
+        rgba(255, 255, 255, 0.62);
 
     border-color:
-        rgba(125, 119, 109, 0.4);
+        rgba(120, 122, 116, 0.38);
 }
 
 
@@ -279,6 +288,10 @@ textarea {
     margin-top: 24px;
 
     display: none;
+
+    align-items: center;
+
+    justify-content: center;
 }
 
 
@@ -289,25 +302,40 @@ textarea {
     );
 
     padding:
-        7px
-        14px;
+        7px 14px;
 
     border:
         1px solid
-        #c8c3bb;
+        #d6d3cc;
 
     border-radius: 999px;
 
     outline: none;
 
     background:
-        rgba(255, 255, 255, 0.7);
+        rgba(255, 255, 255, 0.72);
 
-    color: #45433f;
+    color: #3f423f;
 
     text-align: center;
 
-    font-size: 12px;
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+}
+
+
+#keyword-input:focus {
+    border-color:
+        #aaa9a3;
+
+    background:
+        rgba(255, 255, 255, 0.9);
 }
 
 
@@ -325,11 +353,13 @@ textarea {
     background:
         transparent;
 
-    color: #aaa39a;
+    color: #aaa9a3;
 
     cursor: pointer;
 
-    font-size: 16px;
+    font-size: 15px;
+
+    line-height: 1;
 
     transition:
         color 0.2s ease,
@@ -338,7 +368,7 @@ textarea {
 
 
 .ai-keyword-button:hover {
-    color: #777169;
+    color: #6f716c;
 
     transform:
         rotate(12deg);
@@ -406,22 +436,23 @@ textarea {
         transform:
             translateY(0);
     }
-
 }
 
 
 /* ============================================================
-   LABEL
+   MEMORY LABEL
 ============================================================ */
 
 .memory-label {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 
-    color: #aaa49b;
+    color: #aaa9a3;
 
-    font-size: 9px;
+    font-size: 8px;
 
     font-weight: 500;
+
+    line-height: 1;
 
     letter-spacing: 0.18em;
 
@@ -436,17 +467,22 @@ textarea {
 .memory-text-wrapper {
     position: relative;
 
+    width: 100%;
+
     max-width: 720px;
 
-    padding-right: 60px;
+    padding-right: 55px;
 }
 
 
 .day-memory-text {
     margin: 0;
 
-    color: #45433f;
+    color: #3f423f;
 
+    /*
+     * Same typography as the calendar keyword.
+     */
     font-family:
         Georgia,
         "Times New Roman",
@@ -454,14 +490,14 @@ textarea {
 
     font-size:
         clamp(
-            20px,
-            3vw,
-            30px
+            17px,
+            2vw,
+            22px
         );
 
     font-weight: 400;
 
-    line-height: 1.55;
+    line-height: 1.7;
 
     letter-spacing: -0.015em;
 
@@ -473,9 +509,13 @@ textarea {
 
 
 .day-memory-text:hover {
-    opacity: 0.65;
+    opacity: 0.68;
 }
 
+
+/* ============================================================
+   TEXT EDIT FORM
+============================================================ */
 
 .memory-edit-form {
     display: none;
@@ -495,14 +535,13 @@ textarea {
     min-height: 120px;
 
     padding:
-        16px
-        18px;
+        14px 16px;
 
     resize: vertical;
 
     border:
         1px solid
-        #d1ccc4;
+        #d5d2cb;
 
     border-radius: 2px;
 
@@ -511,30 +550,56 @@ textarea {
     background:
         rgba(255, 255, 255, 0.55);
 
-    color: #45433f;
+    color: #3f423f;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: 20px;
+    font-size: 17px;
 
-    line-height: 1.55;
+    font-weight: 400;
+
+    line-height: 1.7;
+
+    letter-spacing: -0.015em;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 
 .memory-edit-form textarea:focus {
     border-color:
-        #aaa39a;
+        #aaa9a3;
 
     background:
-        rgba(255, 255, 255, 0.8);
+        rgba(255, 255, 255, 0.82);
 }
 
 
 /* ============================================================
-   PHOTO
+   PHOTO MEMORY
+============================================================ */
+
+.photo-memory {
+    position: relative;
+
+    width: 100%;
+
+    padding-right: 0;
+}
+
+
+/* ============================================================
+   PHOTO AREA
+
+   The photo itself no longer has a thick white frame.
+
+   This keeps the visual lighter and closer to the
+   current Korean editorial / diary aesthetic.
 ============================================================ */
 
 .day-photo-frame {
@@ -548,17 +613,22 @@ textarea {
     margin:
         0 auto;
 
-    padding: 12px;
+    padding: 0;
 
-    background:
-        rgba(255, 255, 255, 0.58);
+    background: transparent;
 
     box-shadow:
         0 18px 45px
-        rgba(65, 59, 50, 0.08);
+        rgba(65, 59, 50, 0.07);
 
     transform:
-        rotate(-0.35deg);
+        rotate(-0.25deg);
+}
+
+
+.day-photo-frame:nth-child(2n) {
+    transform:
+        rotate(0.25deg);
 }
 
 
@@ -574,15 +644,13 @@ textarea {
     object-fit: contain;
 
     background:
-        #ebe7e0;
+        #ebe8e2;
 }
 
 
-.day-photo-frame:nth-child(2n) {
-    transform:
-        rotate(0.35deg);
-}
-
+/* ============================================================
+   PHOTO UNAVAILABLE
+============================================================ */
 
 .photo-unavailable {
     width: 100%;
@@ -596,96 +664,121 @@ textarea {
     justify-content: center;
 
     background:
-        #ebe7e0;
+        #ebe8e2;
 
-    color: #aaa49c;
+    color: #aaa9a3;
 
-    font-size: 11px;
+    font-size: 9px;
 
-    letter-spacing: 0.08em;
+    line-height: 1;
+
+    letter-spacing: 0.1em;
 }
 
 
 /* ============================================================
-   PHOTO ACTION MENU
+   MEMORY ACTION MENU
+
+   IMPORTANT:
+   The three-dot button sits outside the photo frame,
+   aligned to the same right-side vertical axis as
+   the text memory.
+
+   It does NOT overlap the actual photo.
 ============================================================ */
 
 .memory-menu-wrapper {
     position: absolute;
 
-    top: 10px;
+    top: 0;
 
-    right: 10px;
+    right: 0;
 
-    z-index: 20;
+    z-index: 30;
 }
 
 
 .memory-more-button {
-    width: 32px;
+    width: 30px;
 
-    height: 32px;
+    height: 30px;
 
     padding: 0;
 
-    border: 0;
+    border:
+        1px solid
+        rgba(130, 130, 124, 0.16);
 
     border-radius: 50%;
 
     background:
-        rgba(245, 242, 237, 0.84);
+        rgba(247, 246, 242, 0.82);
 
-    color: #777169;
+    color: #8f908a;
 
     cursor: pointer;
 
-    font-size: 15px;
+    font-size: 14px;
 
     line-height: 1;
 
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
     backdrop-filter:
-        blur(8px);
+        blur(10px);
 
     -webkit-backdrop-filter:
-        blur(8px);
+        blur(10px);
 
     transition:
         background 0.2s ease,
-        color 0.2s ease;
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
 
 .memory-more-button:hover {
     background:
-        rgba(255, 255, 255, 0.96);
+        rgba(255, 255, 255, 0.92);
 
-    color: #383734;
+    color: #555751;
+
+    border-color:
+        rgba(120, 120, 114, 0.28);
 }
 
+
+/* ============================================================
+   MEMORY MENU DROPDOWN
+============================================================ */
 
 .memory-menu {
     position: absolute;
 
-    top: 38px;
+    top: 36px;
 
     right: 0;
 
-    min-width: 150px;
+    min-width: 145px;
 
-    padding: 6px;
+    padding: 5px;
 
     display: none;
 
     background:
-        rgba(250, 248, 244, 0.96);
+        rgba(250, 249, 246, 0.96);
 
     border:
         1px solid
-        rgba(120, 114, 105, 0.16);
+        rgba(120, 120, 114, 0.15);
 
     box-shadow:
         0 12px 30px
-        rgba(50, 45, 39, 0.1);
+        rgba(50, 45, 39, 0.08);
 
     backdrop-filter:
         blur(14px);
@@ -704,18 +797,20 @@ textarea {
     width: 100%;
 
     padding:
-        9px
-        12px;
+        9px 12px;
 
     border: 0;
 
-    background: transparent;
+    background:
+        transparent;
 
-    color: #5f5b55;
+    color: #646660;
 
     text-align: left;
 
-    font-size: 11px;
+    font-size: 10px;
+
+    line-height: 1.4;
 
     cursor: pointer;
 
@@ -727,19 +822,19 @@ textarea {
 
 .memory-menu-item:hover {
     background:
-        rgba(220, 215, 207, 0.35);
+        rgba(220, 218, 211, 0.38);
 
-    color: #383734;
+    color: #3f423f;
 }
 
 
 .memory-menu-delete {
-    color: #9a817d;
+    color: #9b8580;
 }
 
 
 .memory-menu-delete:hover {
-    color: #7d5f5a;
+    color: #785f5a;
 }
 
 
@@ -768,13 +863,13 @@ textarea {
 
     gap: 6px;
 
-    color: #67635d;
+    color: #555751;
 
     text-decoration: none;
 
     border-bottom:
         1px solid
-        rgba(103, 99, 93, 0.35);
+        rgba(90, 91, 85, 0.28);
 
     padding-bottom: 2px;
 
@@ -783,7 +878,11 @@ textarea {
         "Times New Roman",
         serif;
 
-    font-size: 18px;
+    font-size: 16px;
+
+    line-height: 1.5;
+
+    letter-spacing: -0.015em;
 
     transition:
         color 0.2s ease,
@@ -792,10 +891,10 @@ textarea {
 
 
 .memory-link:hover {
-    color: #383734;
+    color: #3f423f;
 
     border-color:
-        #383734;
+        #3f423f;
 }
 
 
@@ -819,27 +918,34 @@ textarea {
 
 
 .day-empty p {
-    margin: 0 0 8px;
+    margin:
+        0 0 8px;
 
-    color: #595650;
+    color: #555751;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: 26px;
+    font-size: 22px;
 
     font-weight: 400;
+
+    line-height: 1.5;
+
+    letter-spacing: -0.015em;
 }
 
 
 .day-empty span {
-    color: #aaa49b;
+    color: #aaa9a3;
 
-    font-size: 11px;
+    font-size: 9px;
 
-    letter-spacing: 0.08em;
+    line-height: 1.4;
+
+    letter-spacing: 0.1em;
 }
 
 
@@ -854,7 +960,7 @@ textarea {
 
     border-top:
         1px solid
-        rgba(120, 114, 105, 0.14);
+        rgba(120, 120, 114, 0.13);
 
     display: flex;
 
@@ -878,21 +984,22 @@ textarea {
     min-width: 130px;
 
     padding:
-        10px
-        16px;
+        10px 16px;
 
     border:
         1px solid
-        rgba(120, 114, 105, 0.22);
+        rgba(120, 120, 114, 0.2);
 
     border-radius: 999px;
 
     background:
-        rgba(255, 255, 255, 0.34);
+        rgba(255, 255, 255, 0.32);
 
-    color: #777169;
+    color: #777972;
 
-    font-size: 10px;
+    font-size: 9px;
+
+    line-height: 1;
 
     letter-spacing: 0.06em;
 
@@ -907,7 +1014,7 @@ textarea {
 
 
 .action-button span {
-    font-size: 15px;
+    font-size: 14px;
 
     line-height: 1;
 }
@@ -918,9 +1025,9 @@ textarea {
         rgba(255, 255, 255, 0.75);
 
     border-color:
-        rgba(120, 114, 105, 0.35);
+        rgba(120, 120, 114, 0.32);
 
-    color: #4d4944;
+    color: #555751;
 
     transform:
         translateY(-1px);
@@ -934,11 +1041,12 @@ textarea {
 .new-memory-form {
     display: none;
 
+    width: 100%;
+
     max-width: 720px;
 
     margin:
-        28px auto
-        0;
+        28px auto 0;
 }
 
 
@@ -953,43 +1061,50 @@ textarea {
     min-height: 120px;
 
     padding:
-        16px
-        18px;
+        14px 16px;
 
     resize: vertical;
 
     border:
         1px solid
-        #d1ccc4;
+        #d5d2cb;
 
     outline: none;
 
     background:
-        rgba(255, 255, 255, 0.58);
+        rgba(255, 255, 255, 0.55);
 
-    color: #45433f;
+    color: #3f423f;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: 20px;
+    font-size: 17px;
 
-    line-height: 1.55;
+    font-weight: 400;
+
+    line-height: 1.7;
+
+    letter-spacing: -0.015em;
 
     box-shadow:
         0 12px 30px
-        rgba(60, 54, 47, 0.04);
+        rgba(60, 54, 47, 0.035);
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 
 .new-memory-form textarea:focus {
     border-color:
-        #aaa39a;
+        #aaa9a3;
 
     background:
-        rgba(255, 255, 255, 0.8);
+        rgba(255, 255, 255, 0.82);
 }
 
 
@@ -1008,7 +1123,7 @@ textarea {
 
 .site-footer {
     width: min(
-        100% - 48px,
+        calc(100% - 48px),
         1080px
     );
 
@@ -1016,21 +1131,23 @@ textarea {
         0 auto;
 
     padding:
-        28px
-        0
-        40px;
+        28px 0 40px;
 
     border-top:
         1px solid
-        rgba(120, 114, 105, 0.12);
+        rgba(120, 120, 114, 0.12);
 
     display: flex;
 
+    align-items: center;
+
     justify-content: space-between;
 
-    color: #aaa49b;
+    color: #aaa9a3;
 
-    font-size: 9px;
+    font-size: 8px;
+
+    line-height: 1;
 
     letter-spacing: 0.1em;
 
@@ -1046,8 +1163,7 @@ textarea {
 
     .site-header {
         padding:
-            22px
-            20px;
+            22px 20px;
     }
 
 
@@ -1060,15 +1176,14 @@ textarea {
         width:
             calc(100% - 32px);
 
-        padding-top: 15px;
+        padding-top:
+            15px;
     }
 
 
     .day-header {
         padding:
-            35px
-            0
-            50px;
+            35px 0 50px;
     }
 
 
@@ -1077,12 +1192,13 @@ textarea {
 
         display: inline-block;
 
-        margin-bottom: 30px;
+        margin-bottom:
+            30px;
     }
 
 
     .day-title {
-        font-size: 38px;
+        font-size: 44px;
     }
 
 
@@ -1091,25 +1207,41 @@ textarea {
     }
 
 
-    .day-photo-frame {
-        padding: 8px;
+    .day-memory-text {
+        font-size: 17px;
+
+        line-height: 1.75;
     }
 
 
     .memory-text-wrapper {
-        padding-right: 40px;
+        padding-right: 42px;
     }
 
 
-    .day-memory-text {
-        font-size: 21px;
+    .day-photo-frame {
+        width: 100%;
+    }
+
+
+    .memory-more-button {
+        width: 28px;
+
+        height: 28px;
+    }
+
+
+    .memory-menu {
+        top: 34px;
     }
 
 
     .day-actions {
-        margin-top: 65px;
+        margin-top:
+            65px;
 
-        flex-direction: column;
+        flex-direction:
+            column;
     }
 
 
@@ -1125,7 +1257,70 @@ textarea {
         width:
             calc(100% - 32px);
 
-        padding-bottom: 28px;
+        padding-bottom:
+            28px;
+    }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
+
+@media (max-width: 390px) {
+
+    .site-header {
+        padding:
+            20px 16px;
+    }
+
+
+    .day-page {
+        width:
+            calc(100% - 24px);
+    }
+
+
+    .day-title {
+        font-size: 40px;
+    }
+
+
+    .day-memory-text {
+        font-size: 16px;
+
+        line-height: 1.75;
+    }
+
+
+    .memory-text-wrapper {
+        padding-right: 38px;
+    }
+
+
+    .day-photo-frame {
+        width: 100%;
+    }
+
+
+    .memory-more-button {
+        width: 27px;
+
+        height: 27px;
+
+        font-size: 13px;
+    }
+
+
+    .day-keyword {
+        font-size: 12px;
+    }
+
+
+    .new-memory-form textarea,
+    .memory-edit-form textarea {
+        font-size: 16px;
     }
 
 }
@@ -1140,11 +1335,14 @@ textarea {
     *,
     *::before,
     *::after {
-        animation-duration: 0.01ms !important;
+        animation-duration:
+            0.01ms !important;
 
-        animation-iteration-count: 1 !important;
+        animation-iteration-count:
+            1 !important;
 
-        transition-duration: 0.01ms !important;
+        transition-duration:
+            0.01ms !important;
     }
 
 }
