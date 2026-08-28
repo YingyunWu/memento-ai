@@ -22,7 +22,9 @@
 
 </head>
 
+
 <body>
+
 
 <header class="site-header">
 
@@ -33,6 +35,7 @@
     Memento
 </a>
 
+
 <nav class="site-nav">
 
     <a
@@ -41,6 +44,7 @@
     >
         Home
     </a>
+
 
     <a
         href="/calendar/{{ journal_date[:4] }}/{{ journal_date[5:7]|int }}"
@@ -54,13 +58,16 @@
 </header>
 
 
+
 <main class="day-page">
+
 
 <!-- =====================================================
      DAY HEADER
 ====================================================== -->
 
 <section class="day-header">
+
 
     <a
         href="/calendar/{{ journal_date[:4] }}/{{ journal_date[5:7]|int }}"
@@ -79,6 +86,11 @@
 
         <div class="day-keyword-row">
 
+
+            <!-- =========================================
+                 KEYWORD DISPLAY
+            ========================================== -->
+
             <div
                 class="day-keyword"
                 id="keyword-display"
@@ -88,6 +100,10 @@
                 {{ keyword.final_keyword }}
             </div>
 
+
+            <!-- =========================================
+                 AI REGENERATE
+            ========================================== -->
 
             <button
                 type="button"
@@ -100,8 +116,14 @@
                 ✦
             </button>
 
+
         </div>
 
+
+
+        <!-- =============================================
+             MANUAL KEYWORD FORM
+        ============================================== -->
 
         <form
             id="keyword-form"
@@ -115,16 +137,23 @@
                 value="keyword"
             >
 
+
             <input
                 type="text"
                 name="keyword"
                 id="keyword-input"
                 value="{{ keyword.final_keyword }}"
                 autocomplete="off"
+                spellcheck="false"
             >
 
         </form>
 
+
+
+        <!-- =============================================
+             AI KEYWORD FORM
+        ============================================== -->
 
         <form
             id="ai-keyword-form"
@@ -145,17 +174,22 @@
 </section>
 
 
+
 <!-- =====================================================
      MEMORIES
 ====================================================== -->
 
 <section class="day-content">
 
+
     {% if memories %}
+
 
         <div class="day-memory-list">
 
+
             {% for memory in memories %}
+
 
                 <article
                     class="day-memory"
@@ -169,12 +203,14 @@
 
                     {% if memory.memory_type == "photo" %}
 
+
                         <div class="memory-label">
                             PHOTO
                         </div>
 
 
                         {% if memory.photo_path %}
+
 
                             {% set image_path = memory.photo_path %}
 
@@ -197,7 +233,9 @@
                             {% endif %}
 
 
+
                             <div class="day-photo-frame">
+
 
                                 <img
                                     src="{{ url_for('media', filename=image_path) }}"
@@ -206,11 +244,14 @@
                                     loading="lazy"
                                 >
 
+
+
                                 <!-- =====================================
                                      PHOTO MENU
                                 ====================================== -->
 
                                 <div class="memory-menu-wrapper">
+
 
                                     <button
                                         type="button"
@@ -223,7 +264,9 @@
                                     </button>
 
 
+
                                     <div class="memory-menu">
+
 
                                         <button
                                             type="button"
@@ -242,11 +285,15 @@
                                             Delete
                                         </button>
 
+
                                     </div>
+
 
                                 </div>
 
+
                             </div>
+
 
 
                             <form
@@ -262,11 +309,13 @@
                                     value="replace_photo"
                                 >
 
+
                                 <input
                                     type="hidden"
                                     name="memory_id"
                                     value="{{ memory.id }}"
                                 >
+
 
                                 <input
                                     type="file"
@@ -281,12 +330,14 @@
 
                         {% else %}
 
+
                             <div class="photo-unavailable">
                                 Photo unavailable
                             </div>
 
 
                             <div class="memory-menu-wrapper">
+
 
                                 <button
                                     type="button"
@@ -301,6 +352,7 @@
 
                                 <div class="memory-menu">
 
+
                                     <button
                                         type="button"
                                         class="memory-menu-item memory-menu-delete"
@@ -309,11 +361,15 @@
                                         Delete
                                     </button>
 
+
                                 </div>
+
 
                             </div>
 
+
                         {% endif %}
+
 
 
                     <!-- =================================================
@@ -321,6 +377,7 @@
                     ================================================== -->
 
                     {% elif memory.memory_type == "music" %}
+
 
                         <div class="memory-label">
                             MUSIC
@@ -339,6 +396,7 @@
 
                         <div class="memory-menu-wrapper">
 
+
                             <button
                                 type="button"
                                 class="memory-more-button"
@@ -352,6 +410,7 @@
 
                             <div class="memory-menu">
 
+
                                 <button
                                     type="button"
                                     class="memory-menu-item memory-menu-delete"
@@ -360,9 +419,12 @@
                                     Delete
                                 </button>
 
+
                             </div>
 
+
                         </div>
+
 
 
                     <!-- =================================================
@@ -370,6 +432,7 @@
                     ================================================== -->
 
                     {% elif memory.memory_type == "video" %}
+
 
                         <div class="memory-label">
                             VIDEO
@@ -388,6 +451,7 @@
 
                         <div class="memory-menu-wrapper">
 
+
                             <button
                                 type="button"
                                 class="memory-more-button"
@@ -401,6 +465,7 @@
 
                             <div class="memory-menu">
 
+
                                 <button
                                     type="button"
                                     class="memory-menu-item memory-menu-delete"
@@ -409,9 +474,12 @@
                                     Delete
                                 </button>
 
+
                             </div>
 
+
                         </div>
+
 
 
                     <!-- =================================================
@@ -420,12 +488,14 @@
 
                     {% else %}
 
+
                         <div class="memory-label">
                             MEMORY
                         </div>
 
 
                         <div class="memory-text-wrapper">
+
 
                             <p
                                 class="day-memory-text editable-memory"
@@ -435,6 +505,7 @@
                             >
                                 {{ memory.content }}
                             </p>
+
 
 
                             <form
@@ -466,11 +537,13 @@
                             </form>
 
 
+
                             <!-- =========================================
                                  TEXT MEMORY MENU
                             ========================================== -->
 
                             <div class="memory-menu-wrapper">
+
 
                                 <button
                                     type="button"
@@ -484,6 +557,7 @@
 
 
                                 <div class="memory-menu">
+
 
                                     <button
                                         type="button"
@@ -502,36 +576,49 @@
                                         Delete
                                     </button>
 
+
                                 </div>
+
 
                             </div>
 
+
                         </div>
+
 
                     {% endif %}
 
+
                 </article>
 
+
             {% endfor %}
+
 
         </div>
 
 
     {% else %}
 
+
         <div class="day-empty">
+
 
             <p>
                 Nothing here yet.
             </p>
 
+
             <span>
                 This day is waiting to be remembered.
             </span>
 
+
         </div>
 
+
     {% endif %}
+
 
 
     <!-- =================================================
@@ -539,6 +626,7 @@
     ================================================== -->
 
     <div class="day-actions">
+
 
         <button
             type="button"
@@ -558,12 +646,14 @@
             Add photo
         </label>
 
+
     </div>
+
 
 
     <!-- =================================================
          NEW MEMORY
-    ================================================= -->
+    ================================================== -->
 
     <form
         id="new-memory-form"
@@ -586,12 +676,14 @@
             autocomplete="off"
         ></textarea>
 
+
     </form>
+
 
 
     <!-- =================================================
          PHOTO UPLOAD
-    ================================================= -->
+    ================================================== -->
 
     <form
         id="photo-upload-form"
@@ -615,37 +707,47 @@
             multiple
         >
 
+
     </form>
+
 
 </section>
 
 </main>
 
 
+
 <footer class="site-footer">
+
 
 <span>
     Memento
 </span>
 
+
 <span>
     {{ journal_date }}
 </span>
 
+
 </footer>
+
 
 
 <script>
 
 /* ============================================================
-   State
+   STATE
 ============================================================ */
 
 let editingKeyword = false;
+
 let editingMemoryId = null;
+
 let addingMemory = false;
 
 let originalKeyword = "";
+
 let originalMemory = "";
 
 
@@ -662,6 +764,7 @@ function toggleMemoryMenu(button) {
         return;
     }
 
+
     const menu =
         wrapper.querySelector(".memory-menu");
 
@@ -669,14 +772,18 @@ function toggleMemoryMenu(button) {
         return;
     }
 
+
     const isOpen =
         menu.classList.contains("visible");
 
+
     closeAllMemoryMenus();
+
 
     if (!isOpen) {
 
         menu.classList.add("visible");
+
 
         button.setAttribute(
             "aria-expanded",
@@ -698,10 +805,12 @@ function closeAllMemoryMenus() {
                 "visible"
             );
 
+
             const button =
                 menu
                     .closest(".memory-menu-wrapper")
                     ?.querySelector(".memory-more-button");
+
 
             if (button) {
 
@@ -744,30 +853,38 @@ function openReplacePhoto(button) {
     const wrapper =
         button.closest(".memory-menu-wrapper");
 
+
     if (!wrapper) {
         return;
     }
 
+
     const memory =
         wrapper.closest(".day-memory");
+
 
     if (!memory) {
         return;
     }
 
+
     const memoryId =
         memory.dataset.memoryId;
+
 
     const input =
         document.getElementById(
             "replace-photo-" + memoryId
         );
 
+
     if (!input) {
         return;
     }
 
+
     closeAllMemoryMenus();
+
 
     input.click();
 
@@ -775,7 +892,7 @@ function openReplacePhoto(button) {
 
 
 /* ============================================================
-   AI keyword
+   AI KEYWORD
 ============================================================ */
 
 function regenerateAIKeyword() {
@@ -788,30 +905,36 @@ function regenerateAIKeyword() {
         return;
     }
 
+
     const form =
         document.getElementById(
             "ai-keyword-form"
         );
+
 
     const button =
         document.getElementById(
             "ai-keyword-button"
         );
 
+
     if (!form || !button) {
         return;
     }
+
 
     button.disabled = true;
 
     button.textContent = "…";
 
+
     form.submit();
+
 }
 
 
 /* ============================================================
-   Keyword editing
+   KEYWORD EDITING
 ============================================================ */
 
 function startKeywordEdit() {
@@ -820,36 +943,66 @@ function startKeywordEdit() {
         return;
     }
 
+
     const display =
         document.getElementById(
             "keyword-display"
         );
+
 
     const form =
         document.getElementById(
             "keyword-form"
         );
 
+
     const input =
         document.getElementById(
             "keyword-input"
         );
 
-    if (!display || !form || !input) {
+
+    if (
+        !display ||
+        !form ||
+        !input
+    ) {
         return;
     }
 
+
     editingKeyword = true;
 
-    originalKeyword = input.value;
 
-    display.style.display = "none";
+    originalKeyword =
+        input.value;
 
-    input.style.display = "block";
+
+    display.style.display =
+        "none";
+
+
+    /*
+     * IMPORTANT:
+     *
+     * The form itself is hidden by CSS.
+     * Therefore JavaScript must explicitly
+     * show the form before showing the input.
+     */
+
+    form.style.display =
+        "block";
+
+
+    input.style.display =
+        "block";
+
 
     input.focus();
 
+
     input.select();
+
 
     setTimeout(function () {
 
@@ -859,6 +1012,7 @@ function startKeywordEdit() {
         );
 
     }, 0);
+
 }
 
 
@@ -869,15 +1023,19 @@ function handleKeywordOutsideClick(event) {
             "keyword-form"
         );
 
+
     if (!form) {
         return;
     }
+
 
     if (form.contains(event.target)) {
         return;
     }
 
+
     finishKeywordEdit();
+
 }
 
 
@@ -887,61 +1045,108 @@ function finishKeywordEdit() {
         return;
     }
 
+
     const display =
         document.getElementById(
             "keyword-display"
         );
+
 
     const form =
         document.getElementById(
             "keyword-form"
         );
 
+
     const input =
         document.getElementById(
             "keyword-input"
         );
 
-    if (!display || !form || !input) {
+
+    if (
+        !display ||
+        !form ||
+        !input
+    ) {
         return;
     }
 
+
     const newKeyword =
         input.value.trim();
+
 
     document.removeEventListener(
         "click",
         handleKeywordOutsideClick
     );
 
+
     editingKeyword = false;
+
+
+    /* --------------------------------------------------------
+       Empty keyword
+    -------------------------------------------------------- */
 
     if (!newKeyword) {
 
-        input.value = originalKeyword;
+        input.value =
+            originalKeyword;
 
-        input.style.display = "none";
 
-        display.style.display = "block";
+        input.style.display =
+            "none";
+
+
+        form.style.display =
+            "none";
+
+
+        display.style.display =
+            "inline-block";
+
 
         return;
     }
 
-    if (newKeyword === originalKeyword) {
 
-        input.style.display = "none";
+    /* --------------------------------------------------------
+       No change
+    -------------------------------------------------------- */
 
-        display.style.display = "block";
+    if (
+        newKeyword === originalKeyword
+    ) {
+
+        input.style.display =
+            "none";
+
+
+        form.style.display =
+            "none";
+
+
+        display.style.display =
+            "inline-block";
+
 
         return;
     }
+
+
+    /* --------------------------------------------------------
+       Save new keyword
+    -------------------------------------------------------- */
 
     form.submit();
+
 }
 
 
 /* ============================================================
-   Memory editing
+   MEMORY EDITING
 ============================================================ */
 
 function startMemoryEdit(memoryId) {
@@ -953,20 +1158,24 @@ function startMemoryEdit(memoryId) {
         return;
     }
 
+
     const display =
         document.getElementById(
             "memory-display-" + memoryId
         );
+
 
     const form =
         document.getElementById(
             "memory-form-" + memoryId
         );
 
+
     const input =
         document.getElementById(
             "memory-input-" + memoryId
         );
+
 
     if (
         !display ||
@@ -976,22 +1185,35 @@ function startMemoryEdit(memoryId) {
         return;
     }
 
-    editingMemoryId = memoryId;
 
-    originalMemory = input.value;
+    editingMemoryId =
+        memoryId;
 
-    display.style.display = "none";
 
-    form.classList.add("visible");
+    originalMemory =
+        input.value;
+
+
+    display.style.display =
+        "none";
+
+
+    form.classList.add(
+        "visible"
+    );
+
 
     input.focus();
+
 
     input.setSelectionRange(
         input.value.length,
         input.value.length
     );
 
+
     closeAllMemoryMenus();
+
 
     setTimeout(function () {
 
@@ -1001,6 +1223,7 @@ function startMemoryEdit(memoryId) {
         );
 
     }, 0);
+
 }
 
 
@@ -1010,20 +1233,25 @@ function handleMemoryOutsideClick(event) {
         return;
     }
 
+
     const form =
         document.getElementById(
             "memory-form-" + editingMemoryId
         );
 
+
     if (!form) {
         return;
     }
+
 
     if (form.contains(event.target)) {
         return;
     }
 
+
     finishMemoryEdit();
+
 }
 
 
@@ -1033,23 +1261,28 @@ function finishMemoryEdit() {
         return;
     }
 
+
     const memoryId =
         editingMemoryId;
+
 
     const display =
         document.getElementById(
             "memory-display-" + memoryId
         );
 
+
     const form =
         document.getElementById(
             "memory-form-" + memoryId
         );
 
+
     const input =
         document.getElementById(
             "memory-input-" + memoryId
         );
+
 
     if (
         !display ||
@@ -1059,19 +1292,22 @@ function finishMemoryEdit() {
         return;
     }
 
+
     const newMemory =
         input.value.trim();
+
 
     document.removeEventListener(
         "click",
         handleMemoryOutsideClick
     );
 
+
     editingMemoryId = null;
 
 
     /* --------------------------------------------------------
-       Empty content means DELETE.
+       Empty content means DELETE
     -------------------------------------------------------- */
 
     if (!newMemory) {
@@ -1090,20 +1326,27 @@ function finishMemoryEdit() {
 
         }
 
-        input.value = originalMemory;
+
+        input.value =
+            originalMemory;
+
 
         form.classList.remove(
             "visible"
         );
 
-        display.style.display = "block";
+
+        display.style.display =
+            "block";
+
 
         return;
+
     }
 
 
     /* --------------------------------------------------------
-       No actual change.
+       No actual change
     -------------------------------------------------------- */
 
     if (
@@ -1114,22 +1357,27 @@ function finishMemoryEdit() {
             "visible"
         );
 
-        display.style.display = "block";
+
+        display.style.display =
+            "block";
+
 
         return;
+
     }
 
 
     /* --------------------------------------------------------
-       Save edited content.
+       Save edited content
     -------------------------------------------------------- */
 
     form.submit();
+
 }
 
 
 /* ============================================================
-   Delete memory
+   DELETE MEMORY
 ============================================================ */
 
 function submitDeleteMemory(memoryId) {
@@ -1139,22 +1387,32 @@ function submitDeleteMemory(memoryId) {
             "form"
         );
 
-    form.method = "POST";
+
+    form.method =
+        "POST";
+
 
     form.action =
         "/day/{{ journal_date }}";
+
 
     const actionInput =
         document.createElement(
             "input"
         );
 
-    actionInput.type = "hidden";
 
-    actionInput.name = "action";
+    actionInput.type =
+        "hidden";
+
+
+    actionInput.name =
+        "action";
+
 
     actionInput.value =
         "delete_memory";
+
 
     form.appendChild(
         actionInput
@@ -1166,13 +1424,18 @@ function submitDeleteMemory(memoryId) {
             "input"
         );
 
-    memoryInput.type = "hidden";
+
+    memoryInput.type =
+        "hidden";
+
 
     memoryInput.name =
         "memory_id";
 
+
     memoryInput.value =
         memoryId;
+
 
     form.appendChild(
         memoryInput
@@ -1183,13 +1446,16 @@ function submitDeleteMemory(memoryId) {
         form
     );
 
+
     form.submit();
+
 }
 
 
 function deleteMemory(memoryId) {
 
     closeAllMemoryMenus();
+
 
     if (
         !confirm(
@@ -1199,14 +1465,16 @@ function deleteMemory(memoryId) {
         return;
     }
 
+
     submitDeleteMemory(
         memoryId
     );
+
 }
 
 
 /* ============================================================
-   New memory
+   NEW MEMORY
 ============================================================ */
 
 function startNewMemory() {
@@ -1219,27 +1487,34 @@ function startNewMemory() {
         return;
     }
 
+
     const form =
         document.getElementById(
             "new-memory-form"
         );
+
 
     const input =
         document.getElementById(
             "new-memory-input"
         );
 
+
     if (!form || !input) {
         return;
     }
 
+
     addingMemory = true;
+
 
     form.classList.add(
         "visible"
     );
 
+
     input.focus();
+
 
     setTimeout(function () {
 
@@ -1249,6 +1524,7 @@ function startNewMemory() {
         );
 
     }, 0);
+
 }
 
 
@@ -1259,9 +1535,11 @@ function handleNewMemoryOutsideClick(event) {
             "new-memory-form"
         );
 
+
     if (!form) {
         return;
     }
+
 
     if (
         form.contains(event.target) ||
@@ -1270,7 +1548,9 @@ function handleNewMemoryOutsideClick(event) {
         return;
     }
 
+
     finishNewMemory();
+
 }
 
 
@@ -1280,47 +1560,58 @@ function finishNewMemory() {
         return;
     }
 
+
     const form =
         document.getElementById(
             "new-memory-form"
         );
+
 
     const input =
         document.getElementById(
             "new-memory-input"
         );
 
+
     if (!form || !input) {
         return;
     }
 
+
     const content =
         input.value.trim();
+
 
     document.removeEventListener(
         "click",
         handleNewMemoryOutsideClick
     );
 
+
     addingMemory = false;
+
 
     if (!content) {
 
         input.value = "";
 
+
         form.classList.remove(
             "visible"
         );
 
+
         return;
     }
 
+
     form.submit();
+
 }
 
 
 /* ============================================================
-   New photo upload
+   NEW PHOTO UPLOAD
 ============================================================ */
 
 const photoInput =
@@ -1345,6 +1636,7 @@ if (photoInput) {
                         "photo-upload-form"
                     );
 
+
                 if (uploadForm) {
 
                     uploadForm.submit();
@@ -1360,7 +1652,7 @@ if (photoInput) {
 
 
 /* ============================================================
-   Replace photo upload
+   REPLACE PHOTO UPLOAD
 ============================================================ */
 
 const replacePhotoInputs =
@@ -1383,14 +1675,17 @@ replacePhotoInputs.forEach(
                     return;
                 }
 
+
                 const form =
                     this.closest(
                         "form"
                     );
 
+
                 if (!form) {
                     return;
                 }
+
 
                 form.submit();
 
@@ -1401,6 +1696,7 @@ replacePhotoInputs.forEach(
 );
 
 </script>
+
 
 </body>
 
