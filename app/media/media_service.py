@@ -23,16 +23,23 @@ MEDIA_DIR.mkdir(
 
 
 # ============================================================
-# Supported photo / Live Photo formats
+# Supported image formats
 # ============================================================
 
 IMAGE_EXTENSIONS = {
     ".jpg",
     ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
     ".heic",
     ".heif",
-    ".png",
 }
+
+
+# ============================================================
+# Supported video formats
+# ============================================================
 
 VIDEO_EXTENSIONS = {
     ".mov",
@@ -50,6 +57,7 @@ def is_valid_url(url):
     """
 
     try:
+
         parsed = urlparse(url)
 
         return (
@@ -58,94 +66,12 @@ def is_valid_url(url):
         )
 
     except Exception:
+
         return False
 
 
 # ============================================================
-# Photo / Live Photo file picker
-# ============================================================
-
-def choose_photo_files():
-    """
-    Open the macOS file picker and allow the user
-    to select one or multiple files.
-
-    Supported:
-
-        Regular Photo:
-            JPG
-            JPEG
-            HEIC
-            HEIF
-            PNG
-
-        Live Photo:
-            HEIC/JPEG + MOV
-
-    Returns:
-        list[str]:
-            Selected file paths.
-
-        None:
-            If the user cancels the file picker.
-    """
-
-    script = '''
-    tell application "System Events"
-        activate
-
-        set selectedFiles to choose file ¬
-            with prompt "Choose photo or Live Photo files for Memento AI" ¬
-            with multiple selections allowed
-
-        set outputPaths to {}
-
-        repeat with selectedFile in selectedFiles
-            set end of outputPaths to POSIX path of selectedFile
-        end repeat
-
-        set AppleScript's text item delimiters to linefeed
-
-        return outputPaths as text
-    end tell
-    '''
-
-    try:
-
-        result = subprocess.run(
-            ["osascript", "-e", script],
-            capture_output=True,
-            text=True
-        )
-
-        # User cancelled.
-        if result.returncode != 0:
-            return None
-
-        output = result.stdout.strip()
-
-        if not output:
-            return None
-
-        selected_paths = [
-            path.strip()
-            for path in output.splitlines()
-            if path.strip()
-        ]
-
-        return selected_paths
-
-    except Exception as error:
-
-        print(
-            f"Could not open photo picker: {error}"
-        )
-
-        return None
-
-
-# ============================================================
-# Detect selected photo type
+# Detect photo type
 # ============================================================
 
 def detect_photo_type(file_paths):
@@ -155,22 +81,13 @@ def detect_photo_type(file_paths):
         regular_photo
         live_photo
 
-    Live Photo is detected when the user selects:
-
+    Regular photo:
         one image file
-        +
-        one MOV file
 
-    Returns:
+    Live Photo:
+        one image file + one MOV file
 
-        "regular_photo"
-
-        "live_photo"
-
-    Raises:
-
-        ValueError if the selected files do not
-        represent a supported photo configuration.
+    This function is platform-independent.
     """
 
     if not file_paths:
@@ -200,7 +117,10 @@ def detect_photo_type(file_paths):
     # Regular photo
     # --------------------------------------------------------
 
-    if len(paths) == 1 and len(image_files) == 1:
+    if (
+        len(paths) == 1
+        and len(image_files) == 1
+    ):
 
         return "regular_photo"
 
@@ -208,13 +128,16 @@ def detect_photo_type(file_paths):
     # Live Photo
     # --------------------------------------------------------
 
-    if len(image_files) == 1 and len(video_files) == 1:
+    if (
+        len(image_files) == 1
+        and len(video_files) == 1
+    ):
 
         return "live_photo"
 
     raise ValueError(
         "Unsupported photo selection. "
-        "Please select either one photo or "
+        "Please select one photo or "
         "one photo together with its MOV file "
         "for a Live Photo."
     )
@@ -224,7 +147,10 @@ def detect_photo_type(file_paths):
 # Save Photo / Live Photo
 # ============================================================
 
-def save_photo(file_paths, journal_date):
+def save_photo(
+    file_paths,
+    journal_date,
+):
     """
     Save a regular photo or Live Photo.
 
@@ -240,13 +166,30 @@ def save_photo(file_paths, journal_date):
     Both are stored inside the same journal directory.
 
     Returns:
-        dict containing the saved media information.
+
+        {
+            "type": "regular_photo",
+            "photo_path": "...",
+            "motion_path": None
+        }
+
+    or:
+
+        {
+            "type": "live_photo",
+            "photo_path": "...",
+            "motion_path": "..."
+        }
     """
 
     if isinstance(file_paths, str):
-        file_paths = [file_paths]
+
+        file_paths = [
+            file_paths
+        ]
 
     if not file_paths:
+
         raise ValueError(
             "No photo files were selected."
         )
@@ -350,7 +293,7 @@ def save_photo(file_paths, journal_date):
         )
 
     # --------------------------------------------------------
-    # Return structured media information
+    # Regular photo
     # --------------------------------------------------------
 
     if photo_type == "regular_photo":
@@ -370,7 +313,9 @@ def save_photo(file_paths, journal_date):
 
     for path in saved_paths:
 
-        suffix = Path(path).suffix.lower()
+        suffix = Path(
+            path
+        ).suffix.lower()
 
         if suffix in IMAGE_EXTENSIONS:
 

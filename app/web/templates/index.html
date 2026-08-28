@@ -1,41 +1,1062 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>Memento AI</title>
+<title>
+    Memento
+</title>
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
+<style>
+
+    /* =====================================================
+       RESET
+    ====================================================== */
+
+    * {
+        box-sizing: border-box;
+    }
+
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+
+    body {
+
+        background: #f7f6f2;
+
+        color: #3f423f;
+
+        font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Helvetica Neue",
+            Arial,
+            sans-serif;
+
+        font-weight: 400;
+
+        -webkit-font-smoothing: antialiased;
+
+        overflow: hidden;
+    }
+
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+
+    /* =====================================================
+       PAGE
+    ====================================================== */
+
+    .home-page {
+
+        width: 100%;
+        height: 100vh;
+
+        display: flex;
+        flex-direction: column;
+
+        overflow: hidden;
+    }
+
+
+    /* =====================================================
+       HEADER
+    ====================================================== */
+
+    .site-header {
+
+        flex-shrink: 0;
+
+        height: 68px;
+
+        padding: 0 6vw;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        border-bottom:
+            1px solid #dfded8;
+    }
+
+
+    .logo {
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size: 23px;
+
+        line-height: 1;
+
+        letter-spacing: -0.04em;
+
+        color: #3f423f;
+    }
+
+
+    .site-nav {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 28px;
+
+        font-size: 10px;
+
+        letter-spacing: 0.04em;
+
+        color: #9a9b96;
+    }
+
+
+    .nav-link {
+
+        transition:
+            color 0.2s ease;
+    }
+
+
+    .nav-link:hover {
+
+        color: #3f423f;
+    }
+
+
+    .nav-link.active {
+
+        color: #3f423f;
+    }
+
+
+    /* =====================================================
+       MAIN
+    ====================================================== */
+
+    .home-main {
+
+        flex: 1;
+
+        width: 100%;
+
+        max-width: 1180px;
+
+        margin: 0 auto;
+
+        padding:
+            clamp(30px, 5vh, 58px)
+            40px
+            clamp(24px, 4vh, 42px);
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: space-between;
+
+        min-height: 0;
+    }
+
+
+    /* =====================================================
+       TODAY
+    ====================================================== */
+
+    .today-section {
+
+        display: flex;
+
+        align-items: flex-end;
+
+        justify-content: space-between;
+
+        gap: 40px;
+
+        padding-bottom:
+            clamp(24px, 4vh, 40px);
+
+        border-bottom:
+            1px solid #dfded8;
+    }
+
+
+    .today-label {
+
+        margin: 0 0 12px 0;
+
+        font-size: 8px;
+
+        line-height: 1;
+
+        letter-spacing: 0.2em;
+
+        color: #9a9b96;
+    }
+
+
+    .today-date {
+
+        margin: 0;
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size:
+            clamp(46px, 7vw, 72px);
+
+        line-height: 0.95;
+
+        font-weight: 400;
+
+        letter-spacing: -0.055em;
+
+        color: #3f423f;
+    }
+
+
+    .today-right {
+
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: flex-end;
+
+        gap: 15px;
+
+        max-width: 360px;
+    }
+
+
+    .today-keyword {
+
+        margin: 0;
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size:
+            clamp(18px, 2vw, 24px);
+
+        line-height: 1.2;
+
+        text-align: right;
+
+        color: #3f423f;
+    }
+
+
+    .today-keyword-muted {
+
+        color: #b2b2ac;
+    }
+
+
+    .open-today {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 12px;
+
+        padding-bottom: 5px;
+
+        border-bottom:
+            1px solid #9a9b96;
+
+        font-size: 10px;
+
+        letter-spacing: 0.06em;
+
+        color: #3f423f;
+
+        transition:
+            border-color 0.2s ease,
+            color 0.2s ease;
+    }
+
+
+    .open-today:hover {
+
+        border-color: #3f423f;
+    }
+
+
+    .open-arrow {
+
+        font-size: 15px;
+
+        line-height: 0.8;
+    }
+
+
+    /* =====================================================
+       MEMORIES
+    ====================================================== */
+
+    .memories-section {
+
+        flex: 1;
+
+        min-height: 0;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: center;
+
+        padding:
+            clamp(22px, 3vh, 34px)
+            0;
+    }
+
+
+    .memories-heading {
+
+        display: flex;
+
+        align-items: baseline;
+
+        justify-content: space-between;
+
+        margin-bottom:
+            clamp(14px, 2vh, 22px);
+    }
+
+
+    .section-label {
+
+        margin: 0;
+
+        font-size: 8px;
+
+        line-height: 1;
+
+        letter-spacing: 0.2em;
+
+        color: #9a9b96;
+    }
+
+
+    .memory-count {
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size: 15px;
+
+        color: #9a9b96;
+    }
+
+
+    /* =====================================================
+       MEMORY GRID
+    ====================================================== */
+
+    .memory-grid {
+
+        width: 100%;
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 14px;
+
+        max-height:
+            min(30vh, 280px);
+
+        overflow: hidden;
+    }
+
+
+    .memory-card {
+
+        min-width: 0;
+
+        height:
+            min(30vh, 220px);
+
+        border:
+            1px solid #dfded8;
+
+        background: #f7f6f2;
+
+        overflow: hidden;
+
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+
+    .memory-card:hover {
+
+        background: #fbfaf7;
+
+        border-color: #c9c8c1;
+    }
+
+
+    /* =====================================================
+       PHOTO
+    ====================================================== */
+
+    .memory-photo {
+
+        width: 100%;
+
+        height: 100%;
+
+        object-fit: cover;
+
+        display: block;
+    }
+
+
+    /* =====================================================
+       TEXT MEMORY
+    ====================================================== */
+
+    .memory-text {
+
+        height: 100%;
+
+        padding:
+            18px;
+
+        display: flex;
+
+        flex-direction: column;
+
+        justify-content: space-between;
+    }
+
+
+    .memory-content {
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size:
+            clamp(14px, 1.4vw, 17px);
+
+        line-height: 1.45;
+
+        letter-spacing: -0.015em;
+
+        overflow: hidden;
+
+        display: -webkit-box;
+
+        -webkit-line-clamp: 6;
+
+        -webkit-box-orient: vertical;
+    }
+
+
+    .memory-footer {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        padding-top: 12px;
+
+        border-top:
+            1px solid #dfded8;
+
+        font-size: 7px;
+
+        letter-spacing: 0.14em;
+
+        color: #9a9b96;
+    }
+
+
+    /* =====================================================
+       EMPTY
+    ====================================================== */
+
+    .memory-empty {
+
+        width: 100%;
+
+        padding:
+            30px 0;
+
+        border-top:
+            1px solid #dfded8;
+
+        border-bottom:
+            1px solid #dfded8;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        gap: 30px;
+    }
+
+
+    .empty-text {
+
+        margin: 0;
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size: 18px;
+
+        color: #3f423f;
+    }
+
+
+    .empty-subtext {
+
+        margin: 5px 0 0 0;
+
+        font-size: 9px;
+
+        color: #9a9b96;
+    }
+
+
+    .empty-link {
+
+        flex-shrink: 0;
+
+        font-size: 9px;
+
+        border-bottom:
+            1px solid #9a9b96;
+
+        padding-bottom: 4px;
+    }
+
+
+    /* =====================================================
+       BOTTOM FEATURES
+    ====================================================== */
+
+    .home-features {
+
+        display: grid;
+
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 14px;
+
+        flex-shrink: 0;
+    }
+
+
+    .feature-card {
+
+        min-height: 78px;
+
+        padding:
+            18px 20px;
+
+        border:
+            1px solid #dfded8;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        background: #f7f6f2;
+
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+
+    .feature-card:hover {
+
+        background: #fbfaf7;
+
+        border-color: #c9c8c1;
+    }
+
+
+    .feature-left {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 15px;
+    }
+
+
+    .feature-symbol {
+
+        width: 28px;
+
+        height: 28px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border:
+            1px solid #dfded8;
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size: 15px;
+
+        color: #3f423f;
+    }
+
+
+    .feature-label {
+
+        margin: 0 0 4px 0;
+
+        font-size: 7px;
+
+        letter-spacing: 0.18em;
+
+        color: #9a9b96;
+    }
+
+
+    .feature-title {
+
+        margin: 0;
+
+        font-family:
+            Georgia,
+            "Times New Roman",
+            serif;
+
+        font-size: 16px;
+
+        font-weight: 400;
+
+        letter-spacing: -0.02em;
+    }
+
+
+    .feature-arrow {
+
+        font-size: 17px;
+
+        color: #9a9b96;
+
+        transition:
+            color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+
+    .feature-card:hover
+    .feature-arrow {
+
+        color: #3f423f;
+
+        transform: translateX(3px);
+    }
+
+
+    /* =====================================================
+       FOOTER
+    ====================================================== */
+
+    .site-footer {
+
+        flex-shrink: 0;
+
+        height: 42px;
+
+        padding: 0 6vw;
+
+        border-top:
+            1px solid #dfded8;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        font-size: 8px;
+
+        letter-spacing: 0.03em;
+
+        color: #9a9b96;
+    }
+
+
+    /* =====================================================
+       TABLET
+    ====================================================== */
+
+    @media (max-width: 800px) {
+
+        .site-header {
+
+            padding:
+                0 28px;
+        }
+
+
+        .home-main {
+
+            padding:
+                30px 28px 24px;
+        }
+
+
+        .today-section {
+
+            align-items: flex-start;
+
+            flex-direction: column;
+
+            gap: 18px;
+        }
+
+
+        .today-right {
+
+            align-items: flex-start;
+
+            max-width: none;
+        }
+
+
+        .today-keyword {
+
+            text-align: left;
+        }
+
+
+        .memory-grid {
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            max-height:
+                31vh;
+        }
+
+
+        .memory-card {
+
+            height:
+                min(30vh, 170px);
+        }
+
+
+        .home-features {
+
+            grid-template-columns:
+                1fr 1fr;
+        }
+
+    }
+
+
+    /* =====================================================
+       MOBILE
+    ====================================================== */
+
+    @media (max-width: 600px) {
+
+        body {
+
+            overflow: auto;
+        }
+
+
+        .home-page {
+
+            height: auto;
+
+            min-height: 100vh;
+        }
+
+
+        .site-header {
+
+            height: 62px;
+
+            padding:
+                0 20px;
+        }
+
+
+        .logo {
+
+            font-size: 22px;
+        }
+
+
+        .site-nav {
+
+            gap: 18px;
+
+            font-size: 9px;
+        }
+
+
+        .home-main {
+
+            padding:
+                34px 20px 30px;
+
+            display: block;
+        }
+
+
+        .today-section {
+
+            padding-bottom:
+                28px;
+        }
+
+
+        .today-date {
+
+            font-size:
+                48px;
+        }
+
+
+        .today-right {
+
+            gap: 13px;
+        }
+
+
+        .today-keyword {
+
+            font-size: 19px;
+        }
+
+
+        .memories-section {
+
+            padding:
+                28px 0;
+        }
+
+
+        .memory-grid {
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 10px;
+
+            max-height: none;
+        }
+
+
+        .memory-card {
+
+            height: 150px;
+        }
+
+
+        .memory-text {
+
+            padding: 14px;
+        }
+
+
+        .memory-content {
+
+            font-size: 14px;
+
+            -webkit-line-clamp: 5;
+        }
+
+
+        .home-features {
+
+            grid-template-columns:
+                1fr;
+
+            gap: 10px;
+        }
+
+
+        .feature-card {
+
+            min-height: 70px;
+        }
+
+
+        .site-footer {
+
+            height: 40px;
+
+            padding:
+                0 20px;
+        }
+
+    }
+
+
+    /* =====================================================
+       SHORT SCREENS
+    ====================================================== */
+
+    @media (max-height: 700px)
+    and (min-width: 601px) {
+
+        .site-header {
+
+            height: 58px;
+        }
+
+
+        .home-main {
+
+            padding-top: 22px;
+
+            padding-bottom: 18px;
+        }
+
+
+        .today-section {
+
+            padding-bottom: 20px;
+        }
+
+
+        .today-date {
+
+            font-size: 48px;
+        }
+
+
+        .memories-section {
+
+            padding:
+                16px 0;
+        }
+
+
+        .memory-card {
+
+            height: 150px;
+        }
+
+
+        .home-features {
+
+            gap: 10px;
+        }
+
+
+        .feature-card {
+
+            min-height: 62px;
+
+            padding:
+                12px 16px;
+        }
+
+
+        .site-footer {
+
+            height: 36px;
+        }
+
+    }
+
+</style>
 
 </head>
 
-
 <body>
+
+<div class="home-page">
+
+<!-- =====================================================
+     HEADER
+====================================================== -->
 
 <header class="site-header">
 
-    <a href="/" class="logo">
+    <a
+        href="/"
+        class="logo"
+    >
         Memento
     </a>
 
-    <nav>
 
-        <a href="/">
+    <nav class="site-nav">
+
+        <a
+            href="/"
+            class="nav-link active"
+        >
             Today
         </a>
 
-        <a href="/calendar/2026/8">
-            Calendar
+
+        <a
+            href="/calendar/{{ today[:4] }}/{{ today[5:7]|int }}"
+            class="nav-link"
+        >
+            Archive
         </a>
 
     </nav>
@@ -43,133 +1064,293 @@
 </header>
 
 
-<main class="page">
+<!-- =====================================================
+     MAIN
+====================================================== -->
 
-    <section class="hero">
-
-        <p class="eyebrow">
-            YOUR PERSONAL MEMORY SPACE
-        </p>
-
-        <h1>
-            A little place
-            <br>
-            for your everyday life.
-        </h1>
-
-        <p class="hero-description">
-
-            Memento quietly collects
-            the moments, thoughts,
-            images and sounds
-            that make up your days.
-
-        </p>
-
-    </section>
+<main class="home-main">
 
 
-    <section class="today-card">
+    <!-- =================================================
+         TODAY
+    ================================================== -->
 
-        <div class="section-label">
-            TODAY
-        </div>
+    <section class="today-section">
 
-        <div class="today-empty">
 
-            <p>
-                Your memories will appear here.
+        <div>
+
+            <p class="today-label">
+                TODAY
             </p>
 
-            <span>
-                Add something worth remembering.
-            </span>
+            <h1 class="today-date">
+                {{ today }}
+            </h1>
+
+        </div>
+
+
+        <div class="today-right">
+
+            {% if keyword and keyword.final_keyword %}
+
+                <p class="today-keyword">
+                    {{ keyword.final_keyword }}
+                </p>
+
+            {% else %}
+
+                <p class="today-keyword today-keyword-muted">
+                    No keyword yet.
+                </p>
+
+            {% endif %}
+
+
+            <a
+                href="/day/{{ today }}"
+                class="open-today"
+            >
+
+                Open journal
+
+                <span class="open-arrow">
+                    →
+                </span>
+
+            </a>
 
         </div>
 
     </section>
 
 
-    <section class="feature-grid">
+    <!-- =================================================
+         MEMORIES
+    ================================================== -->
 
+    <section class="memories-section">
+
+
+        <div class="memories-heading">
+
+            <p class="section-label">
+                MEMORIES
+            </p>
+
+
+
+        </div>
+
+
+        {% if memories %}
+
+            <div class="memory-grid">
+
+
+                {% for memory in memories %}
+
+                    <a
+                        href="/day/{{ today }}"
+                        class="memory-card"
+                    >
+
+
+                        {% if memory.memory_type == "photo" %}
+
+
+                            {% if memory.photo_path %}
+
+                                <img
+                                    src="{{ url_for('media', filename=memory.photo_path) }}"
+                                    alt="Memory photo"
+                                    class="memory-photo"
+                                    loading="lazy"
+                                >
+
+                            {% else %}
+
+                                <div class="memory-text">
+
+                                    <div class="memory-content">
+                                        Photo unavailable
+                                    </div>
+
+                                </div>
+
+                            {% endif %}
+
+
+                        {% else %}
+
+                            <div class="memory-text">
+
+                                <div class="memory-content">
+                                    {{ memory.content }}
+                                </div>
+
+
+                                <div class="memory-footer">
+
+                                    <span>
+                                        {{ memory.memory_type|upper }}
+                                    </span>
+
+                                    <span>
+                                        →
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+
+                    </a>
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+            <div class="memory-empty">
+
+                <div>
+
+                    <p class="empty-text">
+                        Nothing here yet.
+                    </p>
+
+                    <p class="empty-subtext">
+                        This day is waiting to be remembered.
+                    </p>
+
+                </div>
+
+
+                <a
+                    href="/day/{{ today }}"
+                    class="empty-link"
+                >
+                    Add a memory →
+                </a>
+
+            </div>
+
+        {% endif %}
+
+
+    </section>
+
+
+    <!-- =================================================
+         FEATURES
+    ================================================== -->
+
+    <section class="home-features">
+
+
+        <!-- Journal -->
 
         <a
-            href="/calendar/2026/8"
+            href="/day/{{ today }}"
             class="feature-card"
         >
 
-            <span class="feature-number">
-                01
+            <div class="feature-left">
+
+                <div class="feature-symbol">
+                    +
+                </div>
+
+
+                <div>
+
+                    <p class="feature-label">
+                        JOURNAL
+                    </p>
+
+                    <h2 class="feature-title">
+                        Today's memories
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <span class="feature-arrow">
+                →
             </span>
-
-            <h2>
-                Monthly Memory
-            </h2>
-
-            <p>
-                See your month through
-                the words that defined
-                each day.
-            </p>
 
         </a>
 
 
-        <div class="feature-card">
+        <!-- AI -->
 
-            <span class="feature-number">
-                02
+        <a
+            href="/day/{{ today }}#ai"
+            class="feature-card"
+        >
+
+            <div class="feature-left">
+
+                <div class="feature-symbol">
+                    ✦
+                </div>
+
+
+                <div>
+
+                    <p class="feature-label">
+                        MEMENTO AI
+                    </p>
+
+                    <h2 class="feature-title">
+                        Understand your memories
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <span class="feature-arrow">
+                →
             </span>
 
-            <h2>
-                AI Reflection
-            </h2>
-
-            <p>
-                Let AI gently discover
-                patterns hidden inside
-                your memories.
-            </p>
-
-        </div>
-
-
-        <div class="feature-card">
-
-            <span class="feature-number">
-                03
-            </span>
-
-            <h2>
-                Your Story
-            </h2>
-
-            <p>
-                Turn ordinary days
-                into something worth
-                keeping.
-            </p>
-
-        </div>
+        </a>
 
 
     </section>
 
+
 </main>
 
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
 
 <footer class="site-footer">
 
     <span>
-        Memento AI
+        Memento
     </span>
 
+
     <span>
-        Remember what matters.
+        {{ today }}
     </span>
 
 </footer>
 
+</div>
 
 </body>
 
