@@ -53,6 +53,7 @@
 
 </header>
 
+
 <main class="day-page">
 
 <!-- =====================================================
@@ -156,10 +157,22 @@
 
             {% for memory in memories %}
 
-                <article class="day-memory">
+                <article
+                    class="day-memory"
+                    data-memory-id="{{ memory.id }}"
+                >
 
+
+                    <!-- =================================================
+                         PHOTO
+                    ================================================== -->
 
                     {% if memory.memory_type == "photo" %}
+
+                        <div class="memory-label">
+                            PHOTO
+                        </div>
+
 
                         {% if memory.photo_path %}
 
@@ -193,7 +206,78 @@
                                     loading="lazy"
                                 >
 
+                                <!-- =====================================
+                                     PHOTO MENU
+                                ====================================== -->
+
+                                <div class="memory-menu-wrapper">
+
+                                    <button
+                                        type="button"
+                                        class="memory-more-button"
+                                        onclick="toggleMemoryMenu(this)"
+                                        aria-label="Memory options"
+                                        aria-expanded="false"
+                                    >
+                                        ···
+                                    </button>
+
+
+                                    <div class="memory-menu">
+
+                                        <button
+                                            type="button"
+                                            class="memory-menu-item"
+                                            onclick="openReplacePhoto(this)"
+                                        >
+                                            Change photo
+                                        </button>
+
+
+                                        <button
+                                            type="button"
+                                            class="memory-menu-item memory-menu-delete"
+                                            onclick="deleteMemory({{ memory.id }})"
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
                             </div>
+
+
+                            <form
+                                method="POST"
+                                action="/day/{{ journal_date }}"
+                                class="memory-action-form hidden-action-form"
+                                enctype="multipart/form-data"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="replace_photo"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="memory_id"
+                                    value="{{ memory.id }}"
+                                >
+
+                                <input
+                                    type="file"
+                                    name="photo"
+                                    id="replace-photo-{{ memory.id }}"
+                                    class="hidden-photo-input"
+                                    accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+                                >
+
+                            </form>
+
 
                         {% else %}
 
@@ -201,10 +285,47 @@
                                 Photo unavailable
                             </div>
 
+
+                            <div class="memory-menu-wrapper">
+
+                                <button
+                                    type="button"
+                                    class="memory-more-button"
+                                    onclick="toggleMemoryMenu(this)"
+                                    aria-label="Memory options"
+                                    aria-expanded="false"
+                                >
+                                    ···
+                                </button>
+
+
+                                <div class="memory-menu">
+
+                                    <button
+                                        type="button"
+                                        class="memory-menu-item memory-menu-delete"
+                                        onclick="deleteMemory({{ memory.id }})"
+                                    >
+                                        Delete
+                                    </button>
+
+                                </div>
+
+                            </div>
+
                         {% endif %}
 
 
+                    <!-- =================================================
+                         MUSIC
+                    ================================================== -->
+
                     {% elif memory.memory_type == "music" %}
+
+                        <div class="memory-label">
+                            MUSIC
+                        </div>
+
 
                         <a
                             href="{{ memory.content }}"
@@ -216,7 +337,44 @@
                         </a>
 
 
+                        <div class="memory-menu-wrapper">
+
+                            <button
+                                type="button"
+                                class="memory-more-button"
+                                onclick="toggleMemoryMenu(this)"
+                                aria-label="Memory options"
+                                aria-expanded="false"
+                            >
+                                ···
+                            </button>
+
+
+                            <div class="memory-menu">
+
+                                <button
+                                    type="button"
+                                    class="memory-menu-item memory-menu-delete"
+                                    onclick="deleteMemory({{ memory.id }})"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                    <!-- =================================================
+                         VIDEO
+                    ================================================== -->
+
                     {% elif memory.memory_type == "video" %}
+
+                        <div class="memory-label">
+                            VIDEO
+                        </div>
+
 
                         <a
                             href="{{ memory.content }}"
@@ -228,43 +386,127 @@
                         </a>
 
 
+                        <div class="memory-menu-wrapper">
+
+                            <button
+                                type="button"
+                                class="memory-more-button"
+                                onclick="toggleMemoryMenu(this)"
+                                aria-label="Memory options"
+                                aria-expanded="false"
+                            >
+                                ···
+                            </button>
+
+
+                            <div class="memory-menu">
+
+                                <button
+                                    type="button"
+                                    class="memory-menu-item memory-menu-delete"
+                                    onclick="deleteMemory({{ memory.id }})"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                    <!-- =================================================
+                         TEXT
+                    ================================================== -->
+
                     {% else %}
 
-                        <p
-                            class="day-memory-text editable-memory"
-                            id="memory-display-{{ memory.id }}"
-                            ondblclick="startMemoryEdit({{ memory.id }})"
-                            title="Double-click to edit"
-                        >
-                            {{ memory.content }}
-                        </p>
+                        <div class="memory-label">
+                            MEMORY
+                        </div>
 
 
-                        <form
-                            class="memory-edit-form"
-                            id="memory-form-{{ memory.id }}"
-                            method="POST"
-                            action="/day/{{ journal_date }}"
-                        >
+                        <div class="memory-text-wrapper">
 
-                            <input
-                                type="hidden"
-                                name="action"
-                                value="edit_memory"
+                            <p
+                                class="day-memory-text editable-memory"
+                                id="memory-display-{{ memory.id }}"
+                                ondblclick="startMemoryEdit({{ memory.id }})"
+                                title="Double-click to edit"
+                            >
+                                {{ memory.content }}
+                            </p>
+
+
+                            <form
+                                class="memory-edit-form"
+                                id="memory-form-{{ memory.id }}"
+                                method="POST"
+                                action="/day/{{ journal_date }}"
                             >
 
-                            <input
-                                type="hidden"
-                                name="memory_id"
-                                value="{{ memory.id }}"
-                            >
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="edit_memory"
+                                >
 
-                            <textarea
-                                name="content"
-                                id="memory-input-{{ memory.id }}"
-                            >{{ memory.content }}</textarea>
 
-                        </form>
+                                <input
+                                    type="hidden"
+                                    name="memory_id"
+                                    value="{{ memory.id }}"
+                                >
+
+
+                                <textarea
+                                    name="content"
+                                    id="memory-input-{{ memory.id }}"
+                                >{{ memory.content }}</textarea>
+
+                            </form>
+
+
+                            <!-- =========================================
+                                 TEXT MEMORY MENU
+                            ========================================== -->
+
+                            <div class="memory-menu-wrapper">
+
+                                <button
+                                    type="button"
+                                    class="memory-more-button"
+                                    onclick="toggleMemoryMenu(this)"
+                                    aria-label="Memory options"
+                                    aria-expanded="false"
+                                >
+                                    ···
+                                </button>
+
+
+                                <div class="memory-menu">
+
+                                    <button
+                                        type="button"
+                                        class="memory-menu-item"
+                                        onclick="startMemoryEdit({{ memory.id }}); closeAllMemoryMenus();"
+                                    >
+                                        Edit
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        class="memory-menu-item memory-menu-delete"
+                                        onclick="deleteMemory({{ memory.id }})"
+                                    >
+                                        Delete
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
                     {% endif %}
 
@@ -321,7 +563,7 @@
 
     <!-- =================================================
          NEW MEMORY
-    ================================================== -->
+    ================================================= -->
 
     <form
         id="new-memory-form"
@@ -336,6 +578,7 @@
             value="memory"
         >
 
+
         <textarea
             id="new-memory-input"
             name="content"
@@ -348,7 +591,7 @@
 
     <!-- =================================================
          PHOTO UPLOAD
-    ================================================== -->
+    ================================================= -->
 
     <form
         id="photo-upload-form"
@@ -362,6 +605,7 @@
             name="action"
             value="photo"
         >
+
 
         <input
             type="file"
@@ -377,6 +621,7 @@
 
 </main>
 
+
 <footer class="site-footer">
 
 <span>
@@ -388,6 +633,7 @@
 </span>
 
 </footer>
+
 
 <script>
 
@@ -401,6 +647,131 @@ let addingMemory = false;
 
 let originalKeyword = "";
 let originalMemory = "";
+
+
+/* ============================================================
+   MEMORY MENUS
+============================================================ */
+
+function toggleMemoryMenu(button) {
+
+    const wrapper =
+        button.closest(".memory-menu-wrapper");
+
+    if (!wrapper) {
+        return;
+    }
+
+    const menu =
+        wrapper.querySelector(".memory-menu");
+
+    if (!menu) {
+        return;
+    }
+
+    const isOpen =
+        menu.classList.contains("visible");
+
+    closeAllMemoryMenus();
+
+    if (!isOpen) {
+
+        menu.classList.add("visible");
+
+        button.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+}
+
+
+function closeAllMemoryMenus() {
+
+    document
+        .querySelectorAll(".memory-menu.visible")
+        .forEach(function (menu) {
+
+            menu.classList.remove(
+                "visible"
+            );
+
+            const button =
+                menu
+                    .closest(".memory-menu-wrapper")
+                    ?.querySelector(".memory-more-button");
+
+            if (button) {
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+
+        });
+
+}
+
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        if (
+            !event.target.closest(
+                ".memory-menu-wrapper"
+            )
+        ) {
+
+            closeAllMemoryMenus();
+
+        }
+
+    }
+);
+
+
+/* ============================================================
+   REPLACE PHOTO
+============================================================ */
+
+function openReplacePhoto(button) {
+
+    const wrapper =
+        button.closest(".memory-menu-wrapper");
+
+    if (!wrapper) {
+        return;
+    }
+
+    const memory =
+        wrapper.closest(".day-memory");
+
+    if (!memory) {
+        return;
+    }
+
+    const memoryId =
+        memory.dataset.memoryId;
+
+    const input =
+        document.getElementById(
+            "replace-photo-" + memoryId
+        );
+
+    if (!input) {
+        return;
+    }
+
+    closeAllMemoryMenus();
+
+    input.click();
+
+}
 
 
 /* ============================================================
@@ -597,7 +968,11 @@ function startMemoryEdit(memoryId) {
             "memory-input-" + memoryId
         );
 
-    if (!display || !form || !input) {
+    if (
+        !display ||
+        !form ||
+        !input
+    ) {
         return;
     }
 
@@ -615,6 +990,8 @@ function startMemoryEdit(memoryId) {
         input.value.length,
         input.value.length
     );
+
+    closeAllMemoryMenus();
 
     setTimeout(function () {
 
@@ -674,7 +1051,11 @@ function finishMemoryEdit() {
             "memory-input-" + memoryId
         );
 
-    if (!display || !form || !input) {
+    if (
+        !display ||
+        !form ||
+        !input
+    ) {
         return;
     }
 
@@ -688,27 +1069,139 @@ function finishMemoryEdit() {
 
     editingMemoryId = null;
 
+
+    /* --------------------------------------------------------
+       Empty content means DELETE.
+    -------------------------------------------------------- */
+
     if (!newMemory) {
+
+        if (
+            confirm(
+                "Delete this memory?"
+            )
+        ) {
+
+            submitDeleteMemory(
+                memoryId
+            );
+
+            return;
+
+        }
 
         input.value = originalMemory;
 
-        form.classList.remove("visible");
+        form.classList.remove(
+            "visible"
+        );
 
         display.style.display = "block";
 
         return;
     }
 
-    if (newMemory === originalMemory) {
 
-        form.classList.remove("visible");
+    /* --------------------------------------------------------
+       No actual change.
+    -------------------------------------------------------- */
+
+    if (
+        newMemory === originalMemory
+    ) {
+
+        form.classList.remove(
+            "visible"
+        );
 
         display.style.display = "block";
 
         return;
     }
+
+
+    /* --------------------------------------------------------
+       Save edited content.
+    -------------------------------------------------------- */
 
     form.submit();
+}
+
+
+/* ============================================================
+   Delete memory
+============================================================ */
+
+function submitDeleteMemory(memoryId) {
+
+    const form =
+        document.createElement(
+            "form"
+        );
+
+    form.method = "POST";
+
+    form.action =
+        "/day/{{ journal_date }}";
+
+    const actionInput =
+        document.createElement(
+            "input"
+        );
+
+    actionInput.type = "hidden";
+
+    actionInput.name = "action";
+
+    actionInput.value =
+        "delete_memory";
+
+    form.appendChild(
+        actionInput
+    );
+
+
+    const memoryInput =
+        document.createElement(
+            "input"
+        );
+
+    memoryInput.type = "hidden";
+
+    memoryInput.name =
+        "memory_id";
+
+    memoryInput.value =
+        memoryId;
+
+    form.appendChild(
+        memoryInput
+    );
+
+
+    document.body.appendChild(
+        form
+    );
+
+    form.submit();
+}
+
+
+function deleteMemory(memoryId) {
+
+    closeAllMemoryMenus();
+
+    if (
+        !confirm(
+            "Delete this memory?"
+        )
+    ) {
+        return;
+    }
+
+    submitDeleteMemory(
+        memoryId
+    );
 }
 
 
@@ -742,7 +1235,9 @@ function startNewMemory() {
 
     addingMemory = true;
 
-    form.classList.add("visible");
+    form.classList.add(
+        "visible"
+    );
 
     input.focus();
 
@@ -813,7 +1308,9 @@ function finishNewMemory() {
 
         input.value = "";
 
-        form.classList.remove("visible");
+        form.classList.remove(
+            "visible"
+        );
 
         return;
     }
@@ -823,7 +1320,7 @@ function finishNewMemory() {
 
 
 /* ============================================================
-   Photo upload
+   New photo upload
 ============================================================ */
 
 const photoInput =
@@ -843,11 +1340,16 @@ if (photoInput) {
                 this.files.length > 0
             ) {
 
-                document
-                    .getElementById(
+                const uploadForm =
+                    document.getElementById(
                         "photo-upload-form"
-                    )
-                    .submit();
+                    );
+
+                if (uploadForm) {
+
+                    uploadForm.submit();
+
+                }
 
             }
 
@@ -855,6 +1357,48 @@ if (photoInput) {
     );
 
 }
+
+
+/* ============================================================
+   Replace photo upload
+============================================================ */
+
+const replacePhotoInputs =
+    document.querySelectorAll(
+        ".hidden-photo-input"
+    );
+
+
+replacePhotoInputs.forEach(
+    function (input) {
+
+        input.addEventListener(
+            "change",
+            function () {
+
+                if (
+                    !this.files ||
+                    this.files.length === 0
+                ) {
+                    return;
+                }
+
+                const form =
+                    this.closest(
+                        "form"
+                    );
+
+                if (!form) {
+                    return;
+                }
+
+                form.submit();
+
+            }
+        );
+
+    }
+);
 
 </script>
 

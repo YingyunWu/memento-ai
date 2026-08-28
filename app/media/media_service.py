@@ -71,6 +71,91 @@ def is_valid_url(url):
 
 
 # ============================================================
+# Photo / Live Photo file picker
+# ============================================================
+
+def choose_photo_files():
+    """
+    Open the macOS file picker and allow the user
+    to select one or multiple files.
+
+    Supported:
+
+        Regular Photo:
+            JPG
+            JPEG
+            HEIC
+            HEIF
+            PNG
+            GIF
+            WEBP
+
+        Live Photo:
+            HEIC/JPEG + MOV
+
+    Returns:
+        list[str]:
+            Selected file paths.
+
+        None:
+            If the user cancels the file picker.
+    """
+
+    script = '''
+    tell application "System Events"
+        activate
+
+        set selectedFiles to choose file ¬
+            with prompt "Choose photo or Live Photo files for Memento AI" ¬
+            with multiple selections allowed
+
+        set outputPaths to {}
+
+        repeat with selectedFile in selectedFiles
+            set end of outputPaths to POSIX path of selectedFile
+        end repeat
+
+        set AppleScript's text item delimiters to linefeed
+
+        return outputPaths as text
+    end tell
+    '''
+
+    try:
+
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            text=True
+        )
+
+        # User cancelled.
+        if result.returncode != 0:
+            return None
+
+        output = result.stdout.strip()
+
+        if not output:
+            return None
+
+        selected_paths = [
+            path.strip()
+            for path in output.splitlines()
+            if path.strip()
+        ]
+
+        return selected_paths
+
+    except Exception as error:
+
+        print(
+            f"Could not open photo picker: {error}"
+        )
+
+        return None
+
+
+# ============================================================
 # Detect photo type
 # ============================================================
 
